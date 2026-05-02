@@ -26,17 +26,38 @@ export default function HomePage() {
 
     audio.muted = isMuted;
     
-    const playAudio = async () => {
+    // Attempt to play on mount (usually starts muted)
+    const startAudio = async () => {
       try {
-        if (!isMuted) {
-          await audio.play();
-        }
+        await audio.play();
       } catch (error) {
-        console.log("Playback failed or blocked:", error);
+        // Autoplay might be blocked until first interaction
+        console.log("Autoplay waiting for interaction");
       }
     };
 
-    playAudio();
+    startAudio();
+
+    // Listen for the first click on the document to "unlock" audio
+    const unlockAudio = () => {
+      if (audio.paused) {
+        audio.play().catch(() => {});
+      }
+      document.removeEventListener('click', unlockAudio);
+    };
+
+    document.addEventListener('click', unlockAudio);
+    return () => document.removeEventListener('click', unlockAudio);
+  }, []);
+
+  // Sync mute state
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted;
+      if (!isMuted && audioRef.current.paused) {
+        audioRef.current.play().catch(() => {});
+      }
+    }
   }, [isMuted]);
 
   const filteredProducts = PRODUCTS.filter((product) => {
@@ -49,17 +70,13 @@ export default function HomePage() {
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
-    // On the first interaction, we ensure play is called
-    if (audioRef.current && isMuted) {
-      audioRef.current.play().catch(() => {});
-    }
   };
 
   return (
     <div className="min-h-screen bg-background relative selection:bg-primary/20">
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
-      {/* Background Music - Soft Ambient Lo-fi */}
+      {/* Background Music - High quality soft lofi track */}
       <audio 
         ref={audioRef}
         src="https://cdn.pixabay.com/audio/2022/05/27/audio_180873748b.mp3" 
