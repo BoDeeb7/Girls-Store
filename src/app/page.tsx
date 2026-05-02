@@ -31,12 +31,9 @@ export default function HomePage() {
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <main className="container mx-auto px-4 py-12">
-        {/* Updated Logo Hero Section - Matching the reference image colors and typography */}
+        {/* Updated Logo Hero Section - Signature removed from here as requested */}
         <section className="text-center mb-16 animate-in fade-in zoom-in duration-1000">
           <div className="flex flex-col items-center">
-            <span className="text-[14px] sm:text-[20px] font-black text-primary tracking-[0.2em] uppercase mb-2">
-              POWERED BY HASSAN DEEB
-            </span>
             <div className="flex flex-col leading-[0.8] text-center font-body">
               <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter uppercase">
                 Girls
