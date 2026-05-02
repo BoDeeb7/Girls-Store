@@ -30,15 +30,15 @@ export default function HomePage() {
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <main className="container mx-auto px-4 py-12">
-        {/* Updated Logo Hero Section with high-contrast color scheme */}
+        {/* Updated Logo Hero Section - Reverted text color to primary, dot to foreground */}
         <section className="text-center mb-16 animate-in fade-in zoom-in duration-1000">
           <div className="flex flex-col items-center">
             <div className="flex flex-col leading-[0.75] text-center font-['Playfair_Display']">
-              <span className="text-7xl sm:text-9xl font-black text-foreground tracking-tighter italic">
+              <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter italic">
                 Girls
               </span>
-              <span className="text-7xl sm:text-9xl font-black text-foreground tracking-tighter uppercase mt-[-0.1em]">
-                Store<span className="text-primary">.</span>
+              <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter uppercase mt-[-0.1em]">
+                Store<span className="text-foreground">.</span>
               </span>
             </div>
           </div>
