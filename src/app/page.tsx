@@ -25,24 +25,21 @@ export default function HomePage() {
       <Navbar />
 
       <main className="container mx-auto px-4 py-12">
-        {/* Custom Logo Hero Section based on image */}
+        {/* Updated Logo Hero Section with Playfair Display font */}
         <section className="text-center mb-16 animate-in fade-in zoom-in duration-1000">
           <div className="flex flex-col items-center">
-            <span className="text-sm sm:text-lg font-black text-primary tracking-[0.15em] uppercase mb-1">
-              POWERED BY HASSAN DEEB
-            </span>
-            <div className="flex flex-col leading-[0.85] text-center">
-              <span className="text-6xl sm:text-8xl font-black text-primary tracking-tighter">
-                GIRLS
+            <div className="flex flex-col leading-[0.75] text-center font-['Playfair_Display']">
+              <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter italic">
+                Girls
               </span>
-              <span className="text-6xl sm:text-8xl font-black text-primary tracking-tighter flex items-center justify-center">
-                STORE<span className="text-primary">.</span>
+              <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter uppercase mt-[-0.1em]">
+                Store<span className="text-primary">.</span>
               </span>
             </div>
           </div>
         </section>
 
-        {/* Category Filters Styled like the image */}
+        {/* Category Filters */}
         <section className="mb-12 overflow-x-auto no-scrollbar">
           <div className="flex items-center justify-center gap-2 sm:gap-3 min-w-max pb-4">
             {CATEGORIES.map((category) => (
@@ -86,7 +83,6 @@ export default function HomePage() {
 
       {/* Floating Buttons Container */}
       <div className="fixed bottom-6 left-0 right-0 px-6 flex justify-between items-center pointer-events-none z-50">
-        {/* Mute Toggle - Floating Left */}
         <button 
           onClick={() => setIsMuted(!isMuted)}
           className="pointer-events-auto w-10 h-10 sm:w-12 sm:h-12 bg-white text-primary rounded-full shadow-lg border border-primary/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
@@ -94,7 +90,6 @@ export default function HomePage() {
           {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
         </button>
 
-        {/* Floating Cart Button - Floating Right */}
         <div className="pointer-events-auto">
           <Sheet>
             <SheetTrigger asChild>

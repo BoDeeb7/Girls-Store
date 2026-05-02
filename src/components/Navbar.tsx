@@ -12,7 +12,7 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-primary/5">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1">
           <Button variant="ghost" size="icon" className="rounded-full text-primary">
             <Search className="w-5 h-5" />
           </Button>
@@ -21,10 +21,14 @@ export function Navbar() {
           </Button>
         </div>
 
-        {/* Removed Logo from Navbar */}
-        <div />
+        {/* Centered Signature */}
+        <div className="flex-1 flex justify-center">
+          <span className="text-[10px] sm:text-xs font-black text-primary/80 tracking-[0.2em] uppercase whitespace-nowrap">
+            POWERED BY HASSAN DEEB
+          </span>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1 justify-end">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="relative rounded-full text-primary">
