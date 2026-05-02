@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -22,35 +21,42 @@ export default function HomePage() {
     : PRODUCTS.filter(p => p.category === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative selection:bg-primary/20">
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Hero / Branding Section */}
-        <section className="text-center mb-12 animate-in fade-in zoom-in duration-700">
-          <h1 className="text-4xl sm:text-6xl font-bold text-primary mb-4 tracking-tight">
-            NEW COLLECTION
-          </h1>
-          <p className="text-muted-foreground text-lg max-w-md mx-auto">
-            Discover the latest in beauty and style.
-          </p>
+      <main className="container mx-auto px-4 py-12">
+        {/* Custom Logo Hero Section based on image */}
+        <section className="text-center mb-16 animate-in fade-in zoom-in duration-1000">
+          <div className="flex flex-col items-center">
+            <span className="text-sm sm:text-lg font-black text-primary tracking-[0.15em] uppercase mb-1">
+              POWERED BY HASSAN DEEB
+            </span>
+            <div className="flex flex-col leading-[0.85] text-center">
+              <span className="text-6xl sm:text-8xl font-black text-primary tracking-tighter">
+                GIRLS
+              </span>
+              <span className="text-6xl sm:text-8xl font-black text-primary tracking-tighter flex items-center justify-center">
+                STORE<span className="text-primary">.</span>
+              </span>
+            </div>
+          </div>
         </section>
 
-        {/* Category Filters */}
-        <section className="mb-10 overflow-x-auto no-scrollbar pb-2">
-          <div className="flex items-center justify-center gap-2 sm:gap-4 min-w-max">
+        {/* Category Filters Styled like the image */}
+        <section className="mb-12 overflow-x-auto no-scrollbar">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 min-w-max pb-4">
             {CATEGORIES.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
                 className={cn(
-                  "px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 border",
+                  "px-6 py-2.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-300 border shadow-sm",
                   selectedCategory === category.id
-                    ? "bg-primary text-white border-primary shadow-lg shadow-primary/30"
-                    : "bg-white text-muted-foreground border-transparent hover:border-primary/30 hover:text-primary"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white text-primary/40 border-primary/5 hover:border-primary/20 hover:text-primary"
                 )}
               >
-                {category.name}
+                {category.id === 'all' ? `ALL - الكل` : category.name}
               </button>
             ))}
           </div>
@@ -71,7 +77,7 @@ export default function HomePage() {
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-muted-foreground">No products found in this category.</p>
+            <p className="text-muted-foreground italic">No products found in this category.</p>
           </div>
         )}
       </main>
@@ -80,7 +86,7 @@ export default function HomePage() {
 
       {/* Floating Buttons Container */}
       <div className="fixed bottom-6 left-0 right-0 px-6 flex justify-between items-center pointer-events-none z-50">
-        {/* Mute Toggle */}
+        {/* Mute Toggle - Floating Left */}
         <button 
           onClick={() => setIsMuted(!isMuted)}
           className="pointer-events-auto w-10 h-10 sm:w-12 sm:h-12 bg-white text-primary rounded-full shadow-lg border border-primary/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
@@ -88,14 +94,14 @@ export default function HomePage() {
           {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
         </button>
 
-        {/* Floating Cart Button */}
+        {/* Floating Cart Button - Floating Right */}
         <div className="pointer-events-auto">
           <Sheet>
             <SheetTrigger asChild>
               <button className="relative w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95">
                 <ShoppingBag className="w-6 h-6" />
                 {itemsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">
+                  <span className="absolute -top-1 -right-1 bg-white text-primary text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-primary">
                     {itemsCount}
                   </span>
                 )}
