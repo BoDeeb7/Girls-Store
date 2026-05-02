@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -30,15 +31,18 @@ export default function HomePage() {
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <main className="container mx-auto px-4 py-12">
-        {/* Updated Logo Hero Section - Reverted text color to primary, dot to foreground */}
+        {/* Updated Logo Hero Section - Matching the reference image colors and typography */}
         <section className="text-center mb-16 animate-in fade-in zoom-in duration-1000">
           <div className="flex flex-col items-center">
-            <div className="flex flex-col leading-[0.75] text-center font-['Playfair_Display']">
-              <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter italic">
+            <span className="text-[14px] sm:text-[20px] font-black text-primary tracking-[0.2em] uppercase mb-2">
+              POWERED BY HASSAN DEEB
+            </span>
+            <div className="flex flex-col leading-[0.8] text-center font-body">
+              <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter uppercase">
                 Girls
               </span>
               <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter uppercase mt-[-0.1em]">
-                Store<span className="text-foreground">.</span>
+                Store<span className="text-primary/30">.</span>
               </span>
             </div>
           </div>
