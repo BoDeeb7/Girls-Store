@@ -11,7 +11,7 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-primary/5">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2 flex-1">
           <Button variant="ghost" size="icon" className="rounded-full text-primary">
             <Search className="w-5 h-5" />
@@ -21,13 +21,13 @@ export function Navbar() {
           </Button>
         </div>
 
-        {/* Centered Signature */}
+        {/* Centered Signature - Larger */}
         <div className="flex-1 flex justify-center">
           <div className="flex flex-col items-center group cursor-default">
-            <span className="text-[11px] sm:text-sm font-black text-primary/80 tracking-[0.25em] uppercase whitespace-nowrap">
+            <span className="text-[13px] sm:text-[18px] font-black text-primary tracking-[0.3em] uppercase whitespace-nowrap transition-all duration-300 group-hover:tracking-[0.35em]">
               POWERED BY HASSAN DEEB
             </span>
-            <div className="w-1/2 h-[1px] bg-primary/30 mt-0.5 transition-all duration-300 group-hover:w-full group-hover:bg-primary/60"></div>
+            <div className="w-3/4 h-[1.5px] bg-primary/40 mt-1 transition-all duration-500 group-hover:w-full group-hover:bg-primary"></div>
           </div>
         </div>
 
