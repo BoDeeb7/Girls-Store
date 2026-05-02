@@ -9,6 +9,7 @@ export interface Product {
   description: string;
   descriptionAr: string;
   imageUrl: string;
+  images: string[];
   imageHint: string;
 }
 

@@ -1,3 +1,4 @@
+
 import { Product } from '../types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -17,9 +18,10 @@ export const PRODUCTS: Product[] = [
     price: 15.99,
     category: 'face',
     categoryAr: 'الوجه',
-    description: 'A rich, creamy lipstick with a matte finish that lasts all day.',
-    descriptionAr: 'أحمر شفاه غني وكريمي بلمسة مطفأة تدوم طوال اليوم.',
+    description: 'A rich, creamy lipstick with a matte finish that lasts all day. Formulated with vitamin E and jojoba oil for extra hydration.',
+    descriptionAr: 'أحمر شفاه غني وكريمي بلمسة مطفأة تدوم طوال اليوم. غني بفيتامين E وزيت الجوجوبا لترطيب إضافي.',
     imageUrl: PlaceHolderImages[0].imageUrl,
+    images: [PlaceHolderImages[0].imageUrl, PlaceHolderImages[7].imageUrl, PlaceHolderImages[6].imageUrl],
     imageHint: PlaceHolderImages[0].imageHint,
   },
   {
@@ -29,9 +31,10 @@ export const PRODUCTS: Product[] = [
     price: 24.50,
     category: 'face',
     categoryAr: 'الوجه',
-    description: 'Lightweight foundation providing full coverage and a natural glow.',
-    descriptionAr: 'كريم أساس خفيف الوزن يوفر تغطية كاملة وإشراقة طبيعية.',
+    description: 'Lightweight foundation providing full coverage and a natural glow. Perfect for all skin types and long-wear use.',
+    descriptionAr: 'كريم أساس خفيف الوزن يوفر تغطية كاملة وإشراقة طبيعية. مثالي لجميع أنواع البشرة والاستخدام الطويل.',
     imageUrl: PlaceHolderImages[1].imageUrl,
+    images: [PlaceHolderImages[1].imageUrl, PlaceHolderImages[7].imageUrl],
     imageHint: PlaceHolderImages[1].imageHint,
   },
   {
@@ -41,9 +44,10 @@ export const PRODUCTS: Product[] = [
     price: 12.00,
     category: 'eyes',
     categoryAr: 'العيون',
-    description: 'Get thick, long lashes with our water-resistant volumizing formula.',
-    descriptionAr: 'احصلي على رموش كثيفة وطويلة بتركيبتنا المقاومة للماء.',
+    description: 'Get thick, long lashes with our water-resistant volumizing formula. The unique brush design ensures clump-free application.',
+    descriptionAr: 'احصلي على رموش كثيفة وطويلة بتركيبتنا المقاومة للماء. يضمن تصميم الفرشاة الفريد تطبيقًا خاليًا من التكتل.',
     imageUrl: PlaceHolderImages[2].imageUrl,
+    images: [PlaceHolderImages[2].imageUrl, PlaceHolderImages[5].imageUrl],
     imageHint: PlaceHolderImages[2].imageHint,
   },
   {
@@ -53,9 +57,10 @@ export const PRODUCTS: Product[] = [
     price: 8.99,
     category: 'nails',
     categoryAr: 'الأظافر',
-    description: 'Add some sparkle to your nails with our chip-resistant glitter polish.',
-    descriptionAr: 'أضيفي بعض اللمعان لأظافرك مع طلاء الأظافر المقاوم للتقشر.',
+    description: 'Add some sparkle to your nails with our chip-resistant glitter polish. Fast-drying formula with a high-shine finish.',
+    descriptionAr: 'أضيفي بعض اللمعان لأظافرك مع طلاء الأظافر المقاوم للتقشر. تركيبة سريعة الجفاف بلمسة نهائية شديدة اللمعان.',
     imageUrl: PlaceHolderImages[3].imageUrl,
+    images: [PlaceHolderImages[3].imageUrl, PlaceHolderImages[3].imageUrl], // Reusing for placeholder variety
     imageHint: PlaceHolderImages[3].imageHint,
   },
   {
@@ -65,9 +70,10 @@ export const PRODUCTS: Product[] = [
     price: 19.99,
     category: 'skin',
     categoryAr: 'البشرة',
-    description: 'Intense hydration with natural rose extracts for a soft skin feel.',
-    descriptionAr: 'ترطيب مكثف بخلاصة الورد الطبيعي لملمس بشرة ناعم.',
+    description: 'Intense hydration with natural rose extracts for a soft skin feel. Ideal for night-time repair and daily moisture boost.',
+    descriptionAr: 'ترطيب مكثف بخلاصة الورد الطبيعي لملمس بشرة ناعم. مثالي لإصلاح البشرة ليلاً وتعزيز الرطوبة اليومية.',
     imageUrl: PlaceHolderImages[4].imageUrl,
+    images: [PlaceHolderImages[4].imageUrl, PlaceHolderImages[4].imageUrl],
     imageHint: PlaceHolderImages[4].imageHint,
   },
   {
@@ -77,9 +83,10 @@ export const PRODUCTS: Product[] = [
     price: 14.00,
     category: 'eyes',
     categoryAr: 'العيون',
-    description: 'Fine tip eyeliner for perfect wings every time.',
-    descriptionAr: 'قلم آيلاينر برأس دقيق لرسمة مثالية في كل مرة.',
+    description: 'Fine tip eyeliner for perfect wings every time. Smudge-proof and sweat-resistant for all-day confidence.',
+    descriptionAr: 'قلم آيلاينر برأس دقيق لرسمة مثالية في كل مرة. مقاوم للتلطخ والعرق لثقة تدوم طوال اليوم.',
     imageUrl: PlaceHolderImages[5].imageUrl,
+    images: [PlaceHolderImages[5].imageUrl, PlaceHolderImages[2].imageUrl],
     imageHint: PlaceHolderImages[5].imageHint,
   },
 ];
