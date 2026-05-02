@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -38,8 +37,8 @@ export function useCart() {
     });
     
     toast({
-      title: "تمت الإضافة!",
-      description: `تمت إضافة ${product.nameAr} إلى السلة`,
+      title: "Added to cart!",
+      description: `${product.name} has been added to your bag.`,
     });
   }, [toast]);
 

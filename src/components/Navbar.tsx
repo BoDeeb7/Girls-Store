@@ -1,7 +1,6 @@
-
 "use client";
 
-import { ShoppingBag, Search, Heart } from "lucide-react";
+import { ShoppingBag, Search, Heart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -22,8 +21,14 @@ export function Navbar() {
           </Button>
         </div>
 
-        <div className="text-2xl font-bold text-primary tracking-tight">
-          Girls Store
+        <div className="flex items-center gap-2 group cursor-pointer transition-transform hover:scale-105">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center text-white rotate-3 group-hover:rotate-0 transition-transform shadow-lg shadow-primary/20">
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
+          </div>
+          <div className="flex flex-col -space-y-1">
+            <span className="text-xl sm:text-2xl font-black text-primary tracking-tighter leading-none">GIRLS</span>
+            <span className="text-[10px] sm:text-xs font-bold text-accent tracking-[0.3em] uppercase pl-0.5">STORE</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -38,9 +43,9 @@ export function Navbar() {
                 )}
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-full sm:max-w-md p-0 overflow-hidden flex flex-col">
+            <SheetContent side="right" className="w-full sm:max-w-md p-0 overflow-hidden flex flex-col">
               <SheetHeader className="p-4 border-b">
-                <SheetTitle className="text-right">سلة التسوق</SheetTitle>
+                <SheetTitle className="text-left">Shopping Cart</SheetTitle>
               </SheetHeader>
               <div className="flex-1 overflow-y-auto">
                 <CartView />

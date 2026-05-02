@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -26,11 +25,11 @@ export default function HomePage() {
       <main className="container mx-auto px-4 py-8">
         {/* Hero / Branding Section */}
         <section className="text-center mb-12 animate-in fade-in zoom-in duration-700">
-          <h1 className="text-4xl sm:text-6xl font-bold text-primary mb-4">
-            Girls Store
+          <h1 className="text-4xl sm:text-6xl font-bold text-primary mb-4 tracking-tight">
+            GIRLS STORE
           </h1>
           <p className="text-muted-foreground text-lg max-w-md mx-auto">
-            أجمل منتجات العناية والجمال المختارة بعناية لكِ
+            Discover our curated collection of beauty and self-care essentials.
           </p>
         </section>
 
@@ -48,7 +47,7 @@ export default function HomePage() {
                     : "bg-white text-muted-foreground border-transparent hover:border-primary/30 hover:text-primary"
                 )}
               >
-                {category.nameAr}
+                {category.name}
               </button>
             ))}
           </div>
@@ -69,7 +68,7 @@ export default function HomePage() {
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-muted-foreground">لا توجد منتجات في هذا القسم حالياً.</p>
+            <p className="text-muted-foreground">No products found in this category.</p>
           </div>
         )}
       </main>
@@ -87,9 +86,9 @@ export default function HomePage() {
               )}
             </button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-full p-0 overflow-hidden flex flex-col">
+          <SheetContent side="right" className="w-full p-0 overflow-hidden flex flex-col">
             <SheetHeader className="p-4 border-b">
-              <SheetTitle className="text-right">سلة التسوق</SheetTitle>
+              <SheetTitle className="text-left">Shopping Cart</SheetTitle>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto">
               <CartView />

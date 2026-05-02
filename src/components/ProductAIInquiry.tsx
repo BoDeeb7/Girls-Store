@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -26,34 +25,34 @@ export function ProductAIInquiry({ product }: { product: Product }) {
       });
       setAnswer(result.answer);
     } catch (error) {
-      setAnswer("عذراً، حدث خطأ ما. يرجى المحاولة لاحقاً.");
+      setAnswer("Sorry, something went wrong. Please try again later.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-4 p-4 text-right">
-      <div className="flex items-center justify-end gap-2 text-primary font-medium">
-        <span className="text-sm">اسألي الذكاء الاصطناعي عن هذا المنتج</span>
+    <div className="space-y-4 p-4 text-left">
+      <div className="flex items-center justify-start gap-2 text-primary font-medium">
         <Sparkles className="w-4 h-4" />
+        <span className="text-sm">Ask AI about this product</span>
       </div>
 
       <form onSubmit={handleSubmit} className="flex gap-2">
+        <Input
+          placeholder="How do I use this?"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          className="text-left focus-visible:ring-primary"
+        />
         <Button 
           type="submit" 
           size="icon" 
           disabled={isLoading || !question.trim()}
           className="rounded-lg flex-shrink-0"
         >
-          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 rotate-180" />}
+          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </Button>
-        <Input
-          placeholder="كيف يمكنني استخدامه؟"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          className="text-right focus-visible:ring-primary"
-        />
       </form>
 
       {answer && (
