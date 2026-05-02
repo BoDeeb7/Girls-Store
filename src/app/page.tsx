@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ProductCard } from "@/components/ProductCard";
 import { CATEGORIES, PRODUCTS } from "./data/products";
@@ -16,7 +16,19 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isMuted, setIsMuted] = useState(true);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const { itemsCount } = useCart();
+
+  // Handle autoplay and sync muted state
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted;
+      audioRef.current.play().catch((error) => {
+        // Autoplay might be blocked by browser until user interaction
+        console.log("Autoplay blocked or waiting for interaction", error);
+      });
+    }
+  }, [isMuted]);
 
   const filteredProducts = PRODUCTS.filter((product) => {
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
@@ -26,12 +38,25 @@ export default function HomePage() {
     return matchesCategory && matchesSearch;
   });
 
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+  };
+
   return (
     <div className="min-h-screen bg-background relative selection:bg-primary/20">
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
+      {/* Hidden Audio Element - Calm ambient music */}
+      <audio 
+        ref={audioRef}
+        src="https://cdn.pixabay.com/audio/2022/02/10/audio_fc86266948.mp3" 
+        loop 
+        autoPlay 
+        playsInline
+      />
+
       <main className="container mx-auto px-4 py-12">
-        {/* Updated Logo Hero Section - Signature removed from here as requested */}
+        {/* Logo Hero Section */}
         <section className="text-center mb-16 animate-in fade-in zoom-in duration-1000">
           <div className="flex flex-col items-center">
             <div className="flex flex-col leading-[0.8] text-center font-body">
@@ -39,7 +64,7 @@ export default function HomePage() {
                 Girls
               </span>
               <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter uppercase mt-[-0.1em]">
-                Store<span className="text-primary/30">.</span>
+                Store<span className="text-[#FBCFE8]">.</span>
               </span>
             </div>
           </div>
@@ -92,8 +117,9 @@ export default function HomePage() {
       {/* Floating Buttons Container */}
       <div className="fixed bottom-6 left-0 right-0 px-6 flex justify-between items-center pointer-events-none z-50">
         <button 
-          onClick={() => setIsMuted(!isMuted)}
+          onClick={toggleMute}
           className="pointer-events-auto w-10 h-10 sm:w-12 sm:h-12 bg-white text-primary rounded-full shadow-lg border border-primary/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          title={isMuted ? "Unmute music" : "Mute music"}
         >
           {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
         </button>
