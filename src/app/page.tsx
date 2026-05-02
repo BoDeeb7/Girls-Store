@@ -49,23 +49,13 @@ export default function HomePage() {
     const audio = audioRef.current;
     if (!audio) return;
     audio.muted = isMuted;
-    const startAudio = async () => {
-      try { await audio.play(); } catch (e) {}
-    };
-    startAudio();
+    
     const unlockAudio = () => {
       if (audio.paused) audio.play().catch(() => {});
       document.removeEventListener('click', unlockAudio);
     };
     document.addEventListener('click', unlockAudio);
     return () => document.removeEventListener('click', unlockAudio);
-  }, []);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.muted = isMuted;
-      if (!isMuted && audioRef.current.paused) audioRef.current.play().catch(() => {});
-    }
   }, [isMuted]);
 
   const handleLogoClick = () => {
@@ -84,21 +74,24 @@ export default function HomePage() {
       setIsAuthenticating(true);
       try {
         const cred = await signInAnonymously(auth);
-        // Create admin role document for the user if it doesn't exist
-        // This works because we'll update the rules to allow users to create their own admin doc
+        
+        // Ensure the admin role exists before redirecting
         if (db) {
           await setDoc(doc(db, "roles_admin", cred.user.uid), {
             uid: cred.user.uid,
             role: "admin",
-            createdAt: serverTimestamp()
+            updatedAt: serverTimestamp()
           }, { merge: true });
         }
         
         localStorage.setItem("admin_auth", "true");
-        router.push("/admin");
+        // Use a small delay to ensure Firebase state propagates
+        setTimeout(() => {
+          router.push("/admin");
+        }, 500);
       } catch (error) {
         console.error("Auth error:", error);
-        alert("Failed to authenticate with database.");
+        alert("Authentication failed. Please try again.");
       } finally {
         setIsAuthenticating(false);
         setAdminPassword("");
@@ -114,7 +107,7 @@ export default function HomePage() {
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesSearch = searchQuery === "" || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 

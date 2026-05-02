@@ -34,15 +34,20 @@ export default function AdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // Strictly redirect if loading is finished and no user session is found
     if (!isUserLoading && !user) {
-      const localAuth = localStorage.getItem("admin_auth");
-      if (localAuth !== "true") {
-        router.push("/");
-      }
+      router.push("/");
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !db) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  if (isUserLoading || !db || !user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <Loader2 className="animate-spin text-primary w-12 h-12" />
+        <p className="text-primary font-bold animate-pulse">Authenticating Session...</p>
+      </div>
+    );
+  }
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,27 +1,4 @@
 
-/**
- * CORE PHILOSOPHY
- * This ruleset implements a Role-Based Access Control (RBAC) model for a public e-commerce storefront. 
- * Access is bifurcated: customers (including anonymous users) have read-only access to the catalog, 
- * while administrative operations are restricted to users verified against a central admin registry.
- *
- * DATA STRUCTURE
- * - /roles_admin/{adminUid}: A registry of authorized administrator UIDs.
- * - /categories/{categoryId}: Top-level product categories.
- * - /products/{productId}: Detailed product listings.
- * - /products/{productId}/images/{imageId}: Nested subcollection for product galleries.
- *
- * KEY SECURITY DECISIONS
- * - Global Admin Role: Administration is not based on document ownership but on the presence of the 
- *   user's UID within the `/roles_admin` collection.
- * - Public Catalog: Categories, products, and images are publicly listable and readable.
- * - Atomic Admin Check: The `isAdmin()` helper uses the `exists()` function to check the registry.
- *
- * PROTOTYPE SECURITY: 
- * For this prototype, we allow a user to create their own admin document. In a production environment, 
- * this would be handled by a secure backend function or a pre-provisioned list of admin UIDs.
- */
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -45,30 +22,25 @@ service cloud.firestore {
     match /roles_admin/{adminUid} {
       allow get: if isSignedIn() && request.auth.uid == adminUid;
       allow list: if isAdmin();
-      // PROTOTYPE ONLY: Allow self-promotion after the UI password check
-      allow create: if isSignedIn() && request.auth.uid == adminUid;
-      allow update: if isExistingAdmin();
+      // Allow self-promotion if user is authenticated and writing to their own record
+      allow create, update: if isSignedIn() && request.auth.uid == adminUid;
       allow delete: if isExistingAdmin();
     }
 
     match /categories/{categoryId} {
       allow get, list: if true;
-      allow create: if isAdmin() && request.resource.data.id == categoryId;
-      allow update: if isExistingAdmin() && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /products/{productId} {
       allow get, list: if true;
-      allow create: if isAdmin() && request.resource.data.id == productId;
-      allow update: if isExistingAdmin() && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
 
       match /images/{imageId} {
         allow get, list: if true;
-        allow create: if isAdmin() && request.resource.data.productId == productId;
-        allow update: if isExistingAdmin() && request.resource.data.productId == resource.data.productId;
-        allow delete: if isExistingAdmin();
+        allow create, update, delete: if isAdmin();
       }
     }
   }
