@@ -4,13 +4,19 @@
 import { useState, useRef, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ProductCard } from "@/components/ProductCard";
-import { CATEGORIES, PRODUCTS } from "./data/products";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/hooks/use-cart";
-import { ShoppingBag, VolumeX, Volume2 } from "lucide-react";
+import { ShoppingBag, VolumeX, Volume2, Lock } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CartView } from "@/components/CartView";
 import { Footer } from "@/components/Footer";
+import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { Product } from "./types";
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -18,49 +24,70 @@ export default function HomePage() {
   const [isMuted, setIsMuted] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { itemsCount } = useCart();
+  const db = useFirestore();
+  const router = useRouter();
 
-  // Handle audio state and browser autoplay policies
+  // Admin trigger state
+  const [logoClicks, setLogoClicks] = useState(0);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+
+  // Firestore Data
+  const categoriesQuery = useMemoFirebase(() => db ? query(collection(db, "categories"), orderBy("name", "asc")) : null, [db]);
+  const productsQuery = useMemoFirebase(() => db ? query(collection(db, "products"), orderBy("createdAt", "desc")) : null, [db]);
+  
+  const { data: categoriesData } = useCollection(categoriesQuery);
+  const { data: productsData } = useCollection(productsQuery);
+
+  const categories = categoriesData || [];
+  const products = productsData || [] as Product[];
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-
     audio.muted = isMuted;
-    
-    // Attempt to play on mount (usually starts muted)
     const startAudio = async () => {
-      try {
-        await audio.play();
-      } catch (error) {
-        // Autoplay might be blocked until first interaction
-        console.log("Autoplay waiting for interaction");
-      }
+      try { await audio.play(); } catch (e) {}
     };
-
     startAudio();
-
-    // Listen for the first click on the document to "unlock" audio
     const unlockAudio = () => {
-      if (audio.paused) {
-        audio.play().catch(() => {});
-      }
+      if (audio.paused) audio.play().catch(() => {});
       document.removeEventListener('click', unlockAudio);
     };
-
     document.addEventListener('click', unlockAudio);
     return () => document.removeEventListener('click', unlockAudio);
   }, []);
 
-  // Sync mute state
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.muted = isMuted;
-      if (!isMuted && audioRef.current.paused) {
-        audioRef.current.play().catch(() => {});
-      }
+      if (!isMuted && audioRef.current.paused) audioRef.current.play().catch(() => {});
     }
   }, [isMuted]);
 
-  const filteredProducts = PRODUCTS.filter((product) => {
+  const handleLogoClick = () => {
+    const newCount = logoClicks + 1;
+    setLogoClicks(newCount);
+    if (newCount === 7) {
+      setShowPasswordDialog(true);
+      setLogoClicks(0);
+    }
+    // Reset click counter if user waits too long
+    setTimeout(() => setLogoClicks(0), 3000);
+  };
+
+  const handleAdminAuth = () => {
+    if (adminPassword === "Hassan@GS#7") {
+      localStorage.setItem("admin_auth", "true");
+      router.push("/admin");
+    } else {
+      alert("Incorrect Password");
+      setAdminPassword("");
+      setShowPasswordDialog(false);
+    }
+  };
+
+  const filteredProducts = products.filter((product) => {
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesSearch = searchQuery === "" || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -68,28 +95,20 @@ export default function HomePage() {
     return matchesCategory && matchesSearch;
   });
 
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
+  const toggleMute = () => setIsMuted(!isMuted);
 
   return (
     <div className="min-h-screen bg-background relative selection:bg-primary/20">
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-
-      {/* Background Music - High quality soft lofi track */}
-      <audio 
-        ref={audioRef}
-        src="https://cdn.pixabay.com/audio/2022/05/27/audio_180873748b.mp3" 
-        loop 
-        playsInline
-        preload="auto"
-      />
+      <audio ref={audioRef} src="https://cdn.pixabay.com/audio/2022/05/27/audio_180873748b.mp3" loop playsInline preload="auto" />
 
       <main className="container mx-auto px-4 py-12">
-        {/* Logo Hero Section - Stacked and Bold */}
         <section className="text-center mb-16 animate-in fade-in zoom-in duration-1000">
           <div className="flex flex-col items-center">
-            <div className="flex flex-col leading-[0.85] text-center font-body">
+            <div 
+              className="flex flex-col leading-[0.85] text-center font-body cursor-pointer active:scale-95 transition-transform"
+              onClick={handleLogoClick}
+            >
               <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter uppercase">
                 Girls
               </span>
@@ -103,10 +122,20 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Category Filters */}
         <section className="mb-12 overflow-x-auto no-scrollbar">
           <div className="flex items-center justify-center gap-2 sm:gap-3 min-w-max pb-4">
-            {CATEGORIES.map((category) => (
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={cn(
+                "px-6 py-2.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-300 border shadow-sm",
+                selectedCategory === "all"
+                  ? "bg-primary text-white border-primary"
+                  : "bg-white text-primary/40 border-primary/5 hover:border-primary/20 hover:text-primary"
+              )}
+            >
+              ALL
+            </button>
+            {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
@@ -117,13 +146,12 @@ export default function HomePage() {
                     : "bg-white text-primary/40 border-primary/5 hover:border-primary/20 hover:text-primary"
                 )}
               >
-                {category.id === 'all' ? `ALL` : category.name}
+                {category.name}
               </button>
             ))}
           </div>
         </section>
 
-        {/* Product Grid */}
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
           {filteredProducts.map((product, idx) => (
             <div 
@@ -147,12 +175,10 @@ export default function HomePage() {
 
       <Footer />
 
-      {/* Floating Buttons Container */}
       <div className="fixed bottom-6 left-0 right-0 px-6 flex justify-between items-center pointer-events-none z-50">
         <button 
           onClick={toggleMute}
           className="pointer-events-auto w-10 h-10 sm:w-12 sm:h-12 bg-white text-primary rounded-full shadow-lg border border-primary/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-          title={isMuted ? "Unmute music" : "Mute music"}
         >
           {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
         </button>
@@ -180,6 +206,31 @@ export default function HomePage() {
           </Sheet>
         </div>
       </div>
+
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-primary" />
+              Admin Access Required
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input 
+              type="password" 
+              placeholder="Enter password" 
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdminAuth()}
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={handleAdminAuth} className="w-full rounded-full font-black uppercase tracking-widest">
+              Unlock Dashboard
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
