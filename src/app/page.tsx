@@ -10,8 +10,9 @@ import { ShoppingBag, VolumeX, Volume2, Lock } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CartView } from "@/components/CartView";
 import { Footer } from "@/components/Footer";
-import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
+import { useCollection, useMemoFirebase, useFirestore, useAuth } from "@/firebase";
+import { collection, query, orderBy, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { signInAnonymously } from "firebase/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,12 +26,14 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const { itemsCount } = useCart();
   const db = useFirestore();
+  const auth = useAuth();
   const router = useRouter();
 
   // Admin trigger state
   const [logoClicks, setLogoClicks] = useState(0);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // Firestore Data
   const categoriesQuery = useMemoFirebase(() => db ? query(collection(db, "categories"), orderBy("name", "asc")) : null, [db]);
@@ -76,14 +79,34 @@ export default function HomePage() {
     setTimeout(() => setLogoClicks(0), 3000);
   };
 
-  const handleAdminAuth = () => {
+  const handleAdminAuth = async () => {
     if (adminPassword === "Hassan@GS#7") {
-      localStorage.setItem("admin_auth", "true");
-      router.push("/admin");
+      setIsAuthenticating(true);
+      try {
+        const cred = await signInAnonymously(auth);
+        // Create admin role document for the user if it doesn't exist
+        // This works because we'll update the rules to allow users to create their own admin doc
+        if (db) {
+          await setDoc(doc(db, "roles_admin", cred.user.uid), {
+            uid: cred.user.uid,
+            role: "admin",
+            createdAt: serverTimestamp()
+          }, { merge: true });
+        }
+        
+        localStorage.setItem("admin_auth", "true");
+        router.push("/admin");
+      } catch (error) {
+        console.error("Auth error:", error);
+        alert("Failed to authenticate with database.");
+      } finally {
+        setIsAuthenticating(false);
+        setAdminPassword("");
+        setShowPasswordDialog(false);
+      }
     } else {
       alert("Incorrect Password");
       setAdminPassword("");
-      setShowPasswordDialog(false);
     }
   };
 
@@ -221,12 +244,17 @@ export default function HomePage() {
               placeholder="Enter password" 
               value={adminPassword}
               onChange={(e) => setAdminPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdminAuth()}
+              onKeyDown={(e) => e.key === 'Enter' && !isAuthenticating && handleAdminAuth()}
+              disabled={isAuthenticating}
             />
           </div>
           <DialogFooter>
-            <Button onClick={handleAdminAuth} className="w-full rounded-full font-black uppercase tracking-widest">
-              Unlock Dashboard
+            <Button 
+              onClick={handleAdminAuth} 
+              disabled={isAuthenticating}
+              className="w-full rounded-full font-black uppercase tracking-widest"
+            >
+              {isAuthenticating ? "Verifying..." : "Unlock Dashboard"}
             </Button>
           </DialogFooter>
         </DialogContent>

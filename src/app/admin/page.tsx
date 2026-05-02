@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, doc, serverTimestamp, query, orderBy } from "firebase/firestore";
-import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,9 +17,9 @@ import { Product } from "@/app/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const db = useFirestore();
+  const { user, isUserLoading } = useUser();
 
   // Collections
   const categoriesQuery = useMemoFirebase(() => db ? query(collection(db, "categories"), orderBy("name", "asc")) : null, [db]);
@@ -34,15 +34,15 @@ export default function AdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const auth = localStorage.getItem("admin_auth");
-    if (auth !== "true") {
-      router.push("/");
-    } else {
-      setIsAuthenticated(true);
+    if (!isUserLoading && !user) {
+      const localAuth = localStorage.getItem("admin_auth");
+      if (localAuth !== "true") {
+        router.push("/");
+      }
     }
-  }, [router]);
+  }, [user, isUserLoading, router]);
 
-  if (!isAuthenticated || !db) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  if (isUserLoading || !db) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
