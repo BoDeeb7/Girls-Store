@@ -23,9 +23,12 @@ export function Navbar() {
 
         {/* Centered Signature */}
         <div className="flex-1 flex justify-center">
-          <span className="text-[10px] sm:text-xs font-black text-primary/80 tracking-[0.2em] uppercase whitespace-nowrap">
-            POWERED BY HASSAN DEEB
-          </span>
+          <div className="flex flex-col items-center group cursor-default">
+            <span className="text-[11px] sm:text-sm font-black text-primary/80 tracking-[0.25em] uppercase whitespace-nowrap">
+              POWERED BY HASSAN DEEB
+            </span>
+            <div className="w-1/2 h-[1px] bg-primary/30 mt-0.5 transition-all duration-300 group-hover:w-full group-hover:bg-primary/60"></div>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-1 justify-end">
