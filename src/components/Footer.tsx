@@ -1,4 +1,3 @@
-
 "use client";
 
 export function Footer() {
@@ -10,7 +9,7 @@ export function Footer() {
         </h2>
         
         <div className="space-y-1">
-          <p className="text-xs sm:text-sm font-bold text-primary/40 tracking-[0.2em] uppercase">
+          <p className="text-sm sm:text-lg font-bold text-primary/40 tracking-[0.2em] uppercase">
             © 2026 GIRLS STORE • BY HASSAN DEEB
           </p>
         </div>
