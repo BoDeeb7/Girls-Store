@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -6,12 +7,14 @@ import { ProductCard } from "@/components/ProductCard";
 import { CATEGORIES, PRODUCTS } from "./data/products";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/hooks/use-cart";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, VolumeX, Volume2 } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CartView } from "@/components/CartView";
+import { Footer } from "@/components/Footer";
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [isMuted, setIsMuted] = useState(true);
   const { itemsCount } = useCart();
 
   const filteredProducts = selectedCategory === "all" 
@@ -19,17 +22,17 @@ export default function HomePage() {
     : PRODUCTS.filter(p => p.category === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background relative">
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
         {/* Hero / Branding Section */}
         <section className="text-center mb-12 animate-in fade-in zoom-in duration-700">
           <h1 className="text-4xl sm:text-6xl font-bold text-primary mb-4 tracking-tight">
-            GIRLS STORE
+            NEW COLLECTION
           </h1>
           <p className="text-muted-foreground text-lg max-w-md mx-auto">
-            Discover our curated collection of beauty and self-care essentials.
+            Discover the latest in beauty and style.
           </p>
         </section>
 
@@ -73,28 +76,41 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* Floating Cart Button for Mobile */}
-      <div className="fixed bottom-6 right-6 z-50 md:hidden">
-        <Sheet>
-          <SheetTrigger asChild>
-            <button className="relative w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95">
-              <ShoppingBag className="w-6 h-6" />
-              {itemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">
-                  {itemsCount}
-                </span>
-              )}
-            </button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-full p-0 overflow-hidden flex flex-col">
-            <SheetHeader className="p-4 border-b">
-              <SheetTitle className="text-left">Shopping Cart</SheetTitle>
-            </SheetHeader>
-            <div className="flex-1 overflow-y-auto">
-              <CartView />
-            </div>
-          </SheetContent>
-        </Sheet>
+      <Footer />
+
+      {/* Floating Buttons Container */}
+      <div className="fixed bottom-6 left-0 right-0 px-6 flex justify-between items-center pointer-events-none z-50">
+        {/* Mute Toggle */}
+        <button 
+          onClick={() => setIsMuted(!isMuted)}
+          className="pointer-events-auto w-10 h-10 sm:w-12 sm:h-12 bg-white text-primary rounded-full shadow-lg border border-primary/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+        >
+          {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+        </button>
+
+        {/* Floating Cart Button */}
+        <div className="pointer-events-auto">
+          <Sheet>
+            <SheetTrigger asChild>
+              <button className="relative w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95">
+                <ShoppingBag className="w-6 h-6" />
+                {itemsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">
+                    {itemsCount}
+                  </span>
+                )}
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full p-0 overflow-hidden flex flex-col">
+              <SheetHeader className="p-4 border-b">
+                <SheetTitle className="text-left">Shopping Cart</SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto">
+                <CartView />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </div>
   );
