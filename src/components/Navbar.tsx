@@ -61,13 +61,13 @@ export function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
           )}
         </div>
 
-        {/* Centered Signature */}
+        {/* Centered Signature - Enlarged as requested */}
         <div className="flex-1 flex justify-center">
           <div className="flex flex-col items-center group cursor-default">
-            <span className="text-[13px] sm:text-[18px] font-black text-primary tracking-[0.3em] uppercase whitespace-nowrap transition-all duration-300 group-hover:tracking-[0.35em]">
+            <span className="text-[14px] sm:text-[20px] font-black text-primary tracking-[0.3em] uppercase whitespace-nowrap transition-all duration-300 group-hover:tracking-[0.35em]">
               POWERED BY HASSAN DEEB
             </span>
-            <div className="w-3/4 h-[1.5px] bg-primary/40 mt-1 transition-all duration-500 group-hover:w-full group-hover:bg-primary"></div>
+            <div className="w-3/4 h-[2px] bg-primary/40 mt-1 transition-all duration-500 group-hover:w-full group-hover:bg-primary"></div>
           </div>
         </div>
 
