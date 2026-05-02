@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, doc, serverTimestamp, query, orderBy } from "firebase/firestore";
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, Plus, Edit2, ArrowLeft, Loader2, Save, X } from "lucide-react";
+import { Trash2, Plus, Edit2, ArrowLeft, Loader2, Save, X, Upload, Image as ImageIcon } from "lucide-react";
 import { Product } from "@/app/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -20,6 +20,7 @@ export default function AdminPage() {
   const router = useRouter();
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Collections
   const categoriesQuery = useMemoFirebase(() => db ? query(collection(db, "categories"), orderBy("name", "asc")) : null, [db]);
@@ -34,7 +35,6 @@ export default function AdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Strictly redirect if loading is finished and no user session is found
     if (!isUserLoading && !user) {
       router.push("/");
     }
@@ -48,6 +48,34 @@ export default function AdminPage() {
       </div>
     );
   }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const fileArray = Array.from(files);
+    const readers = fileArray.map(file => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(readers).then(base64Strings => {
+      setEditingProduct(prev => ({
+        ...prev,
+        images: [...(prev?.images || []), ...base64Strings]
+      }));
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setEditingProduct(prev => ({
+      ...prev,
+      images: prev?.images?.filter((_, i) => i !== index)
+    }));
+  };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +123,7 @@ export default function AdminPage() {
             <ArrowLeft className="w-4 h-4" /> Back to Store
           </Button>
           <h1 className="text-3xl font-black text-primary tracking-tighter uppercase">Admin Panel</h1>
-          <Button variant="destructive" size="sm" onClick={() => { localStorage.removeItem("admin_auth"); router.push("/"); }}>
+          <Button variant="destructive" size="sm" onClick={() => { router.push("/"); }}>
             Logout
           </Button>
         </div>
@@ -143,15 +171,41 @@ export default function AdminPage() {
                         <Label>Price ($)</Label>
                         <Input type="number" step="0.01" value={editingProduct.price || ''} onChange={e => setEditingProduct({...editingProduct, price: e.target.value})} placeholder="0.00" required />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Image URLs (one per line)</Label>
-                        <Textarea 
-                          value={editingProduct.images?.join('\n') || ''} 
-                          onChange={e => setEditingProduct({...editingProduct, images: e.target.value.split('\n').filter(url => url.trim())})} 
-                          placeholder="Paste image URLs here..." 
-                          className="h-32"
-                        />
+                      
+                      <div className="md:col-span-2 space-y-4">
+                        <Label>Product Images</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+                          {editingProduct.images?.map((img, idx) => (
+                            <div key={idx} className="relative aspect-square rounded-xl border overflow-hidden group">
+                              <img src={img} className="w-full h-full object-cover" />
+                              <button 
+                                type="button"
+                                onClick={() => removeImage(idx)}
+                                className="absolute top-1 right-1 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="aspect-square rounded-xl border-2 border-dashed border-primary/20 flex flex-col items-center justify-center gap-2 text-primary/40 hover:text-primary hover:border-primary/40 transition-all bg-primary/5"
+                          >
+                            <Upload className="w-6 h-6" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Upload</span>
+                          </button>
+                          <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handleFileChange} 
+                            multiple 
+                            accept="image/*" 
+                            className="hidden" 
+                          />
+                        </div>
                       </div>
+
                       <div className="md:col-span-2 space-y-2">
                         <Label>Description</Label>
                         <Textarea value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} placeholder="Detailed product description..." className="h-24" />
@@ -172,7 +226,11 @@ export default function AdminPage() {
                       <div key={product.id} className="p-4 border rounded-xl flex items-center justify-between group hover:bg-white hover:shadow-lg transition-all">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-muted rounded-lg overflow-hidden flex-shrink-0 border">
-                            {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />}
+                            {product.images?.[0] ? (
+                              <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <ImageIcon className="w-full h-full p-3 text-muted-foreground" />
+                            )}
                           </div>
                           <div>
                             <p className="font-bold text-sm line-clamp-1">{product.name}</p>
