@@ -1,27 +1,67 @@
 "use client";
 
-import { ShoppingBag, Search, Heart } from "lucide-react";
+import { useState } from "react";
+import { ShoppingBag, Search, Heart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCart } from "@/hooks/use-cart";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CartView } from "@/components/CartView";
+import { cn } from "@/lib/utils";
 
-export function Navbar() {
+interface NavbarProps {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+}
+
+export function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
   const { itemsCount } = useCart();
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-primary/5">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+        {/* Search & Actions */}
         <div className="flex items-center gap-2 flex-1">
-          <Button variant="ghost" size="icon" className="rounded-full text-primary">
-            <Search className="w-5 h-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-full text-primary hidden sm:flex">
-            <Heart className="w-5 h-5" />
-          </Button>
+          {isSearchVisible ? (
+            <div className="flex items-center gap-2 w-full max-w-[200px] sm:max-w-xs animate-in slide-in-from-left duration-300">
+              <Input
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 rounded-full bg-primary/5 border-none focus-visible:ring-1 focus-visible:ring-primary"
+                autoFocus
+              />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full shrink-0 h-8 w-8"
+                onClick={() => {
+                  setIsSearchVisible(false);
+                  setSearchQuery("");
+                }}
+              >
+                <X className="w-4 h-4 text-primary" />
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full text-primary"
+                onClick={() => setIsSearchVisible(true)}
+              >
+                <Search className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full text-primary hidden sm:flex">
+                <Heart className="w-5 h-5" />
+              </Button>
+            </>
+          )}
         </div>
 
-        {/* Centered Signature - Larger */}
+        {/* Centered Signature */}
         <div className="flex-1 flex justify-center">
           <div className="flex flex-col items-center group cursor-default">
             <span className="text-[13px] sm:text-[18px] font-black text-primary tracking-[0.3em] uppercase whitespace-nowrap transition-all duration-300 group-hover:tracking-[0.35em]">
@@ -31,6 +71,7 @@ export function Navbar() {
           </div>
         </div>
 
+        {/* Cart */}
         <div className="flex items-center gap-2 flex-1 justify-end">
           <Sheet>
             <SheetTrigger asChild>

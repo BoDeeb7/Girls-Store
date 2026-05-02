@@ -13,16 +13,21 @@ import { Footer } from "@/components/Footer";
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isMuted, setIsMuted] = useState(true);
   const { itemsCount } = useCart();
 
-  const filteredProducts = selectedCategory === "all" 
-    ? PRODUCTS 
-    : PRODUCTS.filter(p => p.category === selectedCategory);
+  const filteredProducts = PRODUCTS.filter((product) => {
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+    const matchesSearch = searchQuery === "" || 
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-background relative selection:bg-primary/20">
-      <Navbar />
+      <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <main className="container mx-auto px-4 py-12">
         {/* Updated Logo Hero Section with Playfair Display font */}
@@ -74,7 +79,9 @@ export default function HomePage() {
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-muted-foreground italic">No products found in this category.</p>
+            <p className="text-muted-foreground italic">
+              {searchQuery ? `No products found matching "${searchQuery}"` : "No products found in this category."}
+            </p>
           </div>
         )}
       </main>
