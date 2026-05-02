@@ -19,15 +19,24 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const { itemsCount } = useCart();
 
-  // Handle autoplay and sync muted state
+  // Handle audio state and browser autoplay policies
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.muted = isMuted;
-      audioRef.current.play().catch((error) => {
-        // Autoplay might be blocked by browser until user interaction
-        console.log("Autoplay blocked or waiting for interaction", error);
-      });
-    }
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.muted = isMuted;
+    
+    const playAudio = async () => {
+      try {
+        if (!isMuted) {
+          await audio.play();
+        }
+      } catch (error) {
+        console.log("Playback failed or blocked:", error);
+      }
+    };
+
+    playAudio();
   }, [isMuted]);
 
   const filteredProducts = PRODUCTS.filter((product) => {
@@ -40,32 +49,39 @@ export default function HomePage() {
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
+    // On the first interaction, we ensure play is called
+    if (audioRef.current && isMuted) {
+      audioRef.current.play().catch(() => {});
+    }
   };
 
   return (
     <div className="min-h-screen bg-background relative selection:bg-primary/20">
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
-      {/* Hidden Audio Element - Calm ambient music */}
+      {/* Background Music - Soft Ambient Lo-fi */}
       <audio 
         ref={audioRef}
-        src="https://cdn.pixabay.com/audio/2022/02/10/audio_fc86266948.mp3" 
+        src="https://cdn.pixabay.com/audio/2022/05/27/audio_180873748b.mp3" 
         loop 
-        autoPlay 
         playsInline
+        preload="auto"
       />
 
       <main className="container mx-auto px-4 py-12">
-        {/* Logo Hero Section */}
+        {/* Logo Hero Section - Stacked and Bold */}
         <section className="text-center mb-16 animate-in fade-in zoom-in duration-1000">
           <div className="flex flex-col items-center">
-            <div className="flex flex-col leading-[0.8] text-center font-body">
+            <div className="flex flex-col leading-[0.85] text-center font-body">
               <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter uppercase">
                 Girls
               </span>
-              <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter uppercase mt-[-0.1em]">
-                Store<span className="text-[#FBCFE8]">.</span>
-              </span>
+              <div className="flex items-baseline justify-center">
+                <span className="text-7xl sm:text-9xl font-black text-primary tracking-tighter uppercase">
+                  Store
+                </span>
+                <span className="text-7xl sm:text-9xl font-black text-[#FBCFE8] leading-none">.</span>
+              </div>
             </div>
           </div>
         </section>
