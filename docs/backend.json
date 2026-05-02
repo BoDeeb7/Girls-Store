@@ -1,0 +1,219 @@
+{
+  "entities": {
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Represents a product category, used for organizing and filtering products in the Girls Store.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Category entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the product category (e.g., 'Face', 'Nails')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the category."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the category was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the category was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a single product available for sale in the Girls Store.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Product entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the product."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the product, including its features and usage."
+        },
+        "price": {
+          "type": "number",
+          "description": "The current selling price of the product."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to the Category this product belongs to. (Relationship: Category 1:N Product)"
+        },
+        "inventoryCount": {
+          "type": "number",
+          "description": "The current stock quantity of the product."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the product was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the product was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "price",
+        "categoryId",
+        "inventoryCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ProductImage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ProductImage",
+      "type": "object",
+      "description": "Represents an image associated with a product, allowing for multiple images per product.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ProductImage entity."
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to the Product this image belongs to. (Relationship: Product 1:N ProductImage)"
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL where the product image is hosted.",
+          "format": "uri"
+        },
+        "altText": {
+          "type": "string",
+          "description": "Alternative text for the image, used for accessibility and SEO."
+        },
+        "displayOrder": {
+          "type": "number",
+          "description": "An integer indicating the display order of the image (e.g., 1 for primary image, 2 for secondary)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the image record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the image record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "productId",
+        "url",
+        "altText",
+        "displayOrder",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores all product categories. These are publicly readable for displaying to customers and filtering products. Only authenticated administrators can create, update, or delete category documents.",
+          "params": [
+            {
+              "name": "categoryId",
+              "description": "The unique identifier for the category."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Contains details for all products available in the store. Products are publicly readable for customer browsing. Only authenticated administrators can create, update, or delete product documents. Each product includes a 'categoryId' linking it to its respective category.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier for the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/products/{productId}/images/{imageId}",
+        "definition": {
+          "entityName": "ProductImage",
+          "schema": {
+            "$ref": "#/backend/entities/ProductImage"
+          },
+          "description": "A subcollection for each product, storing its associated images. Product images are publicly readable, allowing customers to view multiple angles or variants of a product. Only authenticated administrators can manage these product images (add, update, delete).",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier of the parent product."
+            },
+            {
+              "name": "imageId",
+              "description": "The unique identifier for the product image."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{adminUid}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/user"
+          },
+          "description": "This collection defines users with administrative privileges. Each document's ID is the Firebase Authentication UID of an admin user. The existence of a document at `/roles_admin/$(request.auth.uid)` grants administrative write access to all other data collections (categories, products, images). Read access is granted to any authenticated user to check for their own admin status; write access is highly restricted (e.g., only by existing admins or direct provisioning).",
+          "params": [
+            {
+              "name": "adminUid",
+              "description": "The Firebase Authentication UID of a user with administrator privileges."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and highly debuggable, strictly adhering to the core design principles. The primary goal is to establish a clear separation of concerns between public data visible to all customers and administrative data requiring restricted access. \n\n1.  **Authorization Independence & Denormalization:** This design achieves authorization independence by ensuring that security rules do not rely on `get()` operations to check parent document attributes. All customer-facing data (categories, products, product images) are designated as publicly readable, meaning their access doesn't depend on complex parent-child authorization. Administrator write access is granted purely by checking `request.auth.uid` against the dedicated `/roles_admin` collection, making authorization decisions atomic and independent of document hierarchy. No denormalization of authorization context is explicitly needed for public data, as their access is universal, and admin access is role-based.\n\n2.  **Structural Segregation (Homogeneous Security Posture):** All documents within a given collection (`/categories`, `/products`, `/products/{productId}/images`, `/roles_admin`) share an identical security posture. For example, all products in `/products` are publicly readable and admin-writable. This avoids mixing data with different access requirements in the same collection, significantly simplifying security rules and enhancing clarity.\n\n3.  **QAPs (Rules are not Filters):** For customer-facing data (`/categories`, `/products`, `/products/{productId}/images`), rules will simply allow `read: true;`. This explicitly means all documents are readable by any client, satisfying the Query As Permissions (QAPs) principle. The client application is responsible for filtering and displaying products based on categories or search terms. For admin data, `list` operations on `/roles_admin` are implicitly secure as the role check is for `request.auth.uid`'s existence. The admin can list all categories, products, and images without rule-based filtering issues.\n\n4.  **DBAC (No Custom Claims) & Global Roles:** The admin role is managed using a dedicated top-level collection, `/roles_admin/{adminUid}`. An administrator is identified solely by their `uid` being present as a document ID in this collection. This adheres to the principle of Database Access Control (DBAC) without relying on Firebase Custom Claims and uses the 'existence over content' strategy for global roles. The client-side password (`Hassan@GS#7`) serves as a gate to authenticate a specific admin user with Firebase, whose `uid` is then used for server-side authorization checks.\n\n5.  **Hierarchical Paths for Nested Data:** `ProductImage` entities are stored as a subcollection under their respective `Product` documents (`/products/{productId}/images/{imageId}`). This creates a logical and efficient grouping for data that is inherently nested, while maintaining authorization independence as all subcollection documents share the same public-read, admin-write posture as their parent `Product`."
+  }
+}

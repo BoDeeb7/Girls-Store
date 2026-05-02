@@ -1,0 +1,118 @@
+/**
+ * CORE PHILOSOPHY
+ * This ruleset implements a Role-Based Access Control (RBAC) model for a public e-commerce storefront. 
+ * Access is bifurcated: customers (including anonymous users) have read-only access to the catalog, 
+ * while administrative operations are restricted to users verified against a central admin registry.
+ *
+ * DATA STRUCTURE
+ * - /roles_admin/{adminUid}: A registry of authorized administrator UIDs.
+ * - /categories/{categoryId}: Top-level product categories.
+ * - /products/{productId}: Detailed product listings.
+ * - /products/{productId}/images/{imageId}: Nested subcollection for product galleries.
+ *
+ * KEY SECURITY DECISIONS
+ * - Global Admin Role: Administration is not based on document ownership but on the presence of the 
+ *   user's UID within the `/roles_admin` collection.
+ * - Public Catalog: Categories, products, and images are publicly listable and readable to 
+ *   support SEO and unauthenticated browsing.
+ * - Atomic Admin Check: The `isAdmin()` helper uses the `exists()` function to check the 
+ *   registry, ensuring write permissions are centralized.
+ *
+ * DENORMALIZATION FOR AUTHORIZATION
+ * - Administrative roles are denormalized into a dedicated collection (/roles_admin) where the 
+ *   document ID is the user's UID. This allows for high-performance `exists()` checks 
+ *   without complex query logic.
+ * - Subcollection integrity: Product images contain a `productId` field to ensure relational 
+ *   consistency with their parent path during creation.
+ */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    /** 
+     * @description Checks if the request is from an authenticated user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** 
+     * @description Checks if the authenticated user exists in the admin roles collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /** 
+     * @description Verifies the document exists and the requester has admin privileges.
+     * Used for update and delete operations.
+     */
+    function isExistingAdmin() {
+      return resource != null && isAdmin();
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Manages administrative privileges. Users can check their own status, 
+     * but only existing admins can list or modify the registry.
+     * @path /roles_admin/{adminUid}
+     * @allow (get) If the user is signed in and checking their own UID.
+     * @deny (create) If the user is not already an admin.
+     * @principle Database Access Control (DBAC) via existence check.
+     */
+    match /roles_admin/{adminUid} {
+      allow get: if isSignedIn() && request.auth.uid == adminUid;
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isExistingAdmin();
+      allow delete: if isExistingAdmin();
+    }
+
+    /**
+     * @description Product categories are publicly readable for storefront navigation. 
+     * Modification is restricted to authorized administrators.
+     * @path /categories/{categoryId}
+     * @allow (list) For all users to browse categories.
+     * @deny (update) If the requester is not in the roles_admin collection.
+     * @principle Public Read with Admin-Only Writes.
+     */
+    match /categories/{categoryId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && request.resource.data.id == categoryId;
+      allow update: if isExistingAdmin() && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingAdmin();
+    }
+
+    /**
+     * @description Products are publicly readable. Creation and modification require admin status.
+     * @path /products/{productId}
+     * @allow (create) If requester is admin and ID in data matches path.
+     * @deny (delete) If requester is not an admin.
+     * @principle Relational integrity and role-based write access.
+     */
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && request.resource.data.id == productId;
+      allow update: if isExistingAdmin() && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingAdmin();
+
+      /**
+       * @description Product images subcollection. Publicly readable for product details.
+       * @path /products/{productId}/images/{imageId}
+       * @allow (create) If admin and productId in data matches parent path ID.
+       * @deny (list) If the path is accessed without a valid productId context.
+       * @principle Hierarchical data management with path-to-data consistency.
+       */
+      match /images/{imageId} {
+        allow get, list: if true;
+        allow create: if isAdmin() && request.resource.data.productId == productId;
+        allow update: if isExistingAdmin() && request.resource.data.productId == resource.data.productId;
+        allow delete: if isExistingAdmin();
+      }
+    }
+  }
+}
