@@ -22,7 +22,7 @@ import { Product } from "./types";
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false); // Music starts unmuted by default in state
   const audioRef = useRef<HTMLAudioElement>(null);
   const { itemsCount } = useCart();
   const db = useFirestore();
@@ -51,37 +51,44 @@ export default function HomePage() {
     return dateB - dateA;
   });
 
-  // Robust Audio Implementation
+  // Music Autoplay and Management Logic
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Set initial properties
-    audio.volume = 0.3; // Low volume for calm atmosphere
-    audio.muted = isMuted;
+    audio.volume = 0.3; // Low volume for a nice atmosphere
 
-    const attemptPlay = () => {
-      audio.play().catch(() => {
-        // Autoplay blocked, wait for next interaction
+    const startAudio = () => {
+      audio.play().then(() => {
+        // Success
+      }).catch(() => {
+        // Autoplay blocked - will wait for interaction
       });
     };
 
-    // Unlock audio on any user interaction
-    const handleInteraction = () => {
-      attemptPlay();
-      document.removeEventListener('click', handleInteraction);
-      document.removeEventListener('touchstart', handleInteraction);
+    // Attempt to start immediately
+    startAudio();
+
+    // Unlock audio on first interaction if blocked
+    const unlockAudio = () => {
+      startAudio();
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('scroll', unlockAudio);
     };
 
-    document.addEventListener('click', handleInteraction);
-    document.addEventListener('touchstart', handleInteraction);
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('scroll', unlockAudio);
 
     return () => {
-      document.removeEventListener('click', handleInteraction);
-      document.removeEventListener('touchstart', handleInteraction);
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('scroll', unlockAudio);
     };
   }, []);
 
+  // Update mute state
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.muted = isMuted;
