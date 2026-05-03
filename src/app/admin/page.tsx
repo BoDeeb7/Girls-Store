@@ -42,12 +42,21 @@ export default function AdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [productSearch, setProductSearch] = useState("");
 
+  // Robust redirection logic
   useEffect(() => {
-    // If auth loading finished and no user, OR if role loading finished and no role document
-    if (!isUserLoading && !user) {
-      router.push("/");
-    } else if (!isUserLoading && !isAdminRoleLoading && user && !adminRole) {
-      router.push("/");
+    // Only attempt redirection if loading is completely finished
+    if (!isUserLoading && !isAdminRoleLoading) {
+      if (!user) {
+        // No user logged in, send to home
+        router.push("/");
+      } else if (!adminRole) {
+        // User logged in but no admin document found, send to home
+        // We add a tiny delay to ensure Firestore has synced if we just logged in
+        const timeout = setTimeout(() => {
+          if (!adminRole) router.push("/");
+        }, 1500);
+        return () => clearTimeout(timeout);
+      }
     }
   }, [user, isUserLoading, isAdminRoleLoading, adminRole, router]);
 
@@ -56,12 +65,11 @@ export default function AdminPage() {
       await signOut(auth);
       router.push("/");
     } catch (error) {
-      console.error("Logout error", error);
       router.push("/");
     }
   };
 
-  if (isUserLoading || isAdminRoleLoading || !db || !user || !adminRole) {
+  if (isUserLoading || isAdminRoleLoading || !user || !adminRole) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
         <div className="relative w-24 h-24">
@@ -70,7 +78,7 @@ export default function AdminPage() {
             <span className="text-[10px] font-black text-primary uppercase tracking-tighter">Admin</span>
           </div>
         </div>
-        <p className="text-primary font-bold animate-pulse uppercase tracking-[0.2em] text-xs">Verifying Admin Privileges...</p>
+        <p className="text-primary font-bold animate-pulse uppercase tracking-[0.2em] text-xs">Verifying Access...</p>
       </div>
     );
   }
