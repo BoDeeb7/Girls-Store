@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingBag, Search, Heart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,50 +19,39 @@ export function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
   const { itemsCount } = useCart();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
 
+  // التركيز التلقائي على خانة البحث عند ظهورها
+  useEffect(() => {
+    if (isSearchVisible) {
+      const input = document.getElementById('navbar-search-input');
+      input?.focus();
+    }
+  }, [isSearchVisible]);
+
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-primary/5">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-        {/* Search & Actions */}
+        {/* الجزء الأيسر: زر تفعيل البحث */}
         <div className="flex items-center gap-2 flex-1">
-          {isSearchVisible ? (
-            <div className="flex items-center gap-2 w-full max-w-[200px] sm:max-w-xs animate-in slide-in-from-left duration-300">
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 rounded-full bg-primary/5 border-none focus-visible:ring-1 focus-visible:ring-primary"
-                autoFocus
-              />
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="rounded-full shrink-0 h-8 w-8"
-                onClick={() => {
-                  setIsSearchVisible(false);
-                  setSearchQuery("");
-                }}
-              >
-                <X className="w-4 h-4 text-primary" />
-              </Button>
-            </div>
-          ) : (
-            <>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="rounded-full text-primary"
-                onClick={() => setIsSearchVisible(true)}
-              >
-                <Search className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full text-primary hidden sm:flex">
-                <Heart className="w-5 h-5" />
-              </Button>
-            </>
-          )}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={cn(
+              "rounded-full transition-all duration-300",
+              isSearchVisible ? "text-primary bg-primary/10" : "text-primary"
+            )}
+            onClick={() => {
+              setIsSearchVisible(!isSearchVisible);
+              if (isSearchVisible) setSearchQuery("");
+            }}
+          >
+            {isSearchVisible ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+          </Button>
+          <Button variant="ghost" size="icon" className="rounded-full text-primary hidden sm:flex">
+            <Heart className="w-5 h-5" />
+          </Button>
         </div>
 
-        {/* Centered Signature - Enlarged as requested */}
+        {/* المنتصف: توقيع الموقع */}
         <div className="flex-1 flex justify-center">
           <div className="flex flex-col items-center group cursor-default">
             <span className="text-[14px] sm:text-[20px] font-black text-primary tracking-[0.3em] uppercase whitespace-nowrap transition-all duration-300 group-hover:tracking-[0.35em]">
@@ -71,7 +61,7 @@ export function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
           </div>
         </div>
 
-        {/* Cart */}
+        {/* الجزء الأيمن: السلة */}
         <div className="flex items-center gap-2 flex-1 justify-end">
           <Sheet>
             <SheetTrigger asChild>
@@ -93,6 +83,42 @@ export function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
               </div>
             </SheetContent>
           </Sheet>
+        </div>
+      </div>
+
+      {/* شريط البحث المنبثق لأسفل */}
+      <div className={cn(
+        "overflow-hidden transition-all duration-500 ease-in-out bg-background border-t border-primary/5",
+        isSearchVisible ? "max-h-24 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+      )}>
+        <div className="container mx-auto px-4 py-4">
+          <div className="relative group flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40" />
+              <Input
+                id="navbar-search-input"
+                placeholder="Search for beauty products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-12 w-full rounded-full bg-primary/5 border-none pl-11 pr-12 focus-visible:ring-2 focus-visible:ring-primary/20 text-base"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-primary/10 rounded-full transition-colors"
+                >
+                  <X className="w-4 h-4 text-primary/40" />
+                </button>
+              )}
+            </div>
+            <Button 
+              variant="ghost" 
+              className="rounded-full sm:hidden font-bold text-xs uppercase tracking-widest text-primary/60"
+              onClick={() => setIsSearchVisible(false)}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </div>
     </nav>
