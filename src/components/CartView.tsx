@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export function CartView() {
-  const { items, totalPrice, updateQuantity, removeItem } = useCart();
+  const { items, totalPrice, updateQuantity, removeItem, clearCart } = useCart();
   const [fullName, setFullName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("whish");
 
@@ -36,6 +36,9 @@ export function CartView() {
     
     const encodedMessage = encodeURIComponent(message);
     window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, "_blank");
+    
+    // Clear cart after order
+    clearCart();
   };
 
   if (items.length === 0) {

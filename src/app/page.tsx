@@ -22,7 +22,7 @@ import { Product } from "./types";
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isMuted, setIsMuted] = useState(false); // Music starts unmuted by default in state
+  const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { itemsCount } = useCart();
   const db = useFirestore();
@@ -56,19 +56,25 @@ export default function HomePage() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    audio.volume = 0.3; // Low volume for a nice atmosphere
+    audio.volume = 0.3;
 
     const startAudio = () => {
-      audio.play().then(() => {
-        // Success
-      }).catch(() => {
-        // Autoplay blocked - will wait for interaction
-      });
+      if (!isMuted) {
+        audio.play().catch(() => {});
+      }
     };
 
-    // Attempt to start immediately
-    startAudio();
+    // Visibility Listener to pause when tab inactive
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        audio.pause();
+      } else if (!isMuted) {
+        audio.play().catch(() => {});
+      }
+    };
 
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
     // Unlock audio on first interaction if blocked
     const unlockAudio = () => {
       startAudio();
@@ -82,11 +88,12 @@ export default function HomePage() {
     document.addEventListener('scroll', unlockAudio);
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener('click', unlockAudio);
       document.removeEventListener('touchstart', unlockAudio);
       document.removeEventListener('scroll', unlockAudio);
     };
-  }, []);
+  }, [isMuted]);
 
   // Update mute state
   useEffect(() => {
@@ -94,6 +101,8 @@ export default function HomePage() {
       audioRef.current.muted = isMuted;
       if (!isMuted) {
         audioRef.current.play().catch(() => {});
+      } else {
+        audioRef.current.pause();
       }
     }
   }, [isMuted]);

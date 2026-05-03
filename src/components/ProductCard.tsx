@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Plus, Info, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,20 +20,39 @@ import {
 
 export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Auto-cycle images on hover
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isHovered && product.images && product.images.length > 1) {
+      interval = setInterval(() => {
+        setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
+      }, 1500);
+    } else {
+      setCurrentImageIndex(0);
+    }
+    return () => clearInterval(interval);
+  }, [isHovered, product.images]);
+
+  const displayImage = product.images?.[currentImageIndex] || product.imageUrl;
 
   return (
     <Card 
       className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-white border-none"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Dialog>
         <DialogTrigger asChild>
           <div className="aspect-square relative overflow-hidden bg-muted cursor-pointer">
-            {product.imageUrl ? (
+            {displayImage ? (
               <Image
-                src={product.imageUrl}
+                src={displayImage}
                 alt={product.name}
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                className="object-cover transition-opacity duration-500"
                 data-ai-hint={product.imageHint || "cosmetics"}
               />
             ) : (
