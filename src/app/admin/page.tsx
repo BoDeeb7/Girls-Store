@@ -38,7 +38,7 @@ export default function AdminPage() {
   const { data: productsData } = useCollection(productsQuery);
 
   // Local sorting
-  const categories = categoriesData ? [...categoriesData].sort((a, b) => a.name.localeCompare(b.name)) : [];
+  const categories = categoriesData ? [...categoriesData].sort((a, b) => (a.name || "").localeCompare(b.name || "")) : [];
   const products = productsData ? [...productsData].sort((a, b) => {
     const dateA = a.createdAt?.seconds || 0;
     const dateB = b.createdAt?.seconds || 0;
@@ -55,14 +55,9 @@ export default function AdminPage() {
     if (!isUserLoading && !isAdminRoleLoading) {
       if (!user) {
         router.push("/");
-      } else if (!adminRole) {
-        const timeout = setTimeout(() => {
-          if (!adminRole) router.push("/");
-        }, 3000);
-        return () => clearTimeout(timeout);
       }
     }
-  }, [user, isUserLoading, isAdminRoleLoading, adminRole, router]);
+  }, [user, isUserLoading, isAdminRoleLoading, router]);
 
   const handleLogout = async () => {
     try {
@@ -118,7 +113,9 @@ export default function AdminPage() {
     try {
       const productData = {
         ...editingProduct,
-        price: Number(editingProduct.price),
+        name: editingProduct.name || "",
+        description: editingProduct.description || "",
+        price: Number(editingProduct.price) || 0,
         category: editingProduct.category || "uncategorized",
         updatedAt: serverTimestamp(),
         createdAt: editingProduct.createdAt || serverTimestamp(),
@@ -138,9 +135,10 @@ export default function AdminPage() {
       setEditingProduct(null);
     } catch (err: any) {
       console.error("Save error:", err);
+      const isSizeError = err.message?.toLowerCase().includes("large") || err.code === "resource-exhausted";
       toast({ 
         title: "Error Saving", 
-        description: err.message.includes("large") ? "Total image size is too large (Max 1MB total). Try smaller photos." : "Could not save. Please check your connection.", 
+        description: isSizeError ? "Total image size is too large. Try uploading fewer or smaller photos." : "Could not save. Please check your connection.", 
         variant: "destructive" 
       });
     } finally {
@@ -170,17 +168,18 @@ export default function AdminPage() {
     }
   };
 
-  const filteredProducts = products?.filter(p => 
-    p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    (p.description && p.description.toLowerCase().includes(productSearch.toLowerCase()))
-  );
+  const filteredProducts = products?.filter(p => {
+    const name = p.name || "";
+    const desc = p.description || "";
+    const search = productSearch.toLowerCase();
+    return name.toLowerCase().includes(search) || desc.toLowerCase().includes(search);
+  });
 
   const uncategorizedProducts = filteredProducts?.filter(p => !p.category || p.category === "uncategorized");
 
   return (
     <div className="min-h-screen bg-secondary/30 pb-20">
       <div className="max-w-6xl mx-auto p-2 sm:p-6 lg:p-8 space-y-4 sm:space-y-8">
-        {/* Header Section */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-primary/5">
           <Button variant="ghost" onClick={() => router.push("/")} className="gap-2 rounded-full h-9 text-xs sm:text-sm">
             <ArrowLeft className="w-4 h-4" /> Exit
@@ -237,7 +236,7 @@ export default function AdminPage() {
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary/60">Category</Label>
-                        <Select value={editingProduct.category} onValueChange={val => setEditingProduct({...editingProduct, category: val})}>
+                        <Select value={editingProduct.category || "uncategorized"} onValueChange={val => setEditingProduct({...editingProduct, category: val})}>
                           <SelectTrigger className="rounded-xl h-11">
                             <SelectValue placeholder="Select Category" />
                           </SelectTrigger>
@@ -255,7 +254,7 @@ export default function AdminPage() {
                       </div>
                       
                       <div className="md:col-span-2 space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary/60">Image Gallery (Max 1MB Total)</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary/60">Image Gallery</Label>
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                           {editingProduct.images?.map((img, idx) => (
                             <div key={idx} className="relative aspect-square rounded-xl border border-primary/10 overflow-hidden group shadow-sm">
@@ -410,19 +409,20 @@ export default function AdminPage() {
 }
 
 function ProductItem({ product, onEdit, onDelete }: { product: any, onEdit: () => void, onDelete: () => void }) {
+  const price = Number(product.price) || 0;
   return (
     <div className="p-3 border rounded-xl flex items-center justify-between group hover:bg-white hover:shadow-md transition-all bg-white/30 border-primary/5">
       <div className="flex items-center gap-3 overflow-hidden">
         <div className="w-10 h-10 bg-muted rounded-lg overflow-hidden flex-shrink-0 border border-primary/5">
           {product.images?.[0] ? (
-            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+            <img src={product.images[0]} alt={product.name || "Item"} className="w-full h-full object-cover" />
           ) : (
             <ImageIcon className="w-full h-full p-2 text-muted-foreground/30" />
           )}
         </div>
         <div className="overflow-hidden">
-          <p className="font-bold text-xs truncate text-foreground">{product.name}</p>
-          <p className="text-[10px] text-primary font-black">${Number(product.price).toFixed(2)}</p>
+          <p className="font-bold text-xs truncate text-foreground">{product.name || "Unnamed"}</p>
+          <p className="text-[10px] text-primary font-black">${price.toFixed(2)}</p>
         </div>
       </div>
       <div className="flex gap-1">

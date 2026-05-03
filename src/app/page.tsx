@@ -22,7 +22,7 @@ import { Product } from "./types";
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // Default muted to comply with browser policies
   const audioRef = useRef<HTMLAudioElement>(null);
   const { itemsCount } = useCart();
   const db = useFirestore();
@@ -43,7 +43,7 @@ export default function HomePage() {
   const { data: productsData } = useCollection(productsQuery);
 
   const categories = categoriesData || [];
-  const products = productsData || [] as Product[];
+  const products = (productsData || []) as Product[];
 
   const sortedProducts = [...products].sort((a: any, b: any) => {
     const dateA = a.createdAt?.seconds || 0;
@@ -64,7 +64,6 @@ export default function HomePage() {
       }
     };
 
-    // Visibility Listener to pause when tab inactive
     const handleVisibilityChange = () => {
       if (document.hidden) {
         audio.pause();
@@ -75,9 +74,9 @@ export default function HomePage() {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     
-    // Unlock audio on first interaction if blocked
     const unlockAudio = () => {
-      startAudio();
+      if (isMuted) return;
+      audio.play().catch(() => {});
       document.removeEventListener('click', unlockAudio);
       document.removeEventListener('touchstart', unlockAudio);
       document.removeEventListener('scroll', unlockAudio);
@@ -95,7 +94,6 @@ export default function HomePage() {
     };
   }, [isMuted]);
 
-  // Update mute state
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.muted = isMuted;
@@ -147,10 +145,12 @@ export default function HomePage() {
   };
 
   const filteredProducts = sortedProducts.filter((product) => {
+    const name = product.name || "";
+    const description = product.description || "";
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesSearch = searchQuery === "" || 
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -160,7 +160,6 @@ export default function HomePage() {
     <div className="min-h-screen bg-background relative selection:bg-primary/20">
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
       
-      {/* Calm Piano Background Music */}
       <audio 
         ref={audioRef} 
         src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
