@@ -2,12 +2,11 @@
 "use client";
 
 import Image from "next/image";
-import { Plus, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Info, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Product } from "@/app/types";
 import { useCart } from "@/hooks/use-cart";
-import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductAIInquiry } from "./ProductAIInquiry";
 import {
@@ -28,13 +27,19 @@ export function ProductCard({ product }: { product: Product }) {
       <Dialog>
         <DialogTrigger asChild>
           <div className="aspect-square relative overflow-hidden bg-muted cursor-pointer">
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-110"
-              data-ai-hint={product.imageHint}
-            />
+            {product.imageUrl ? (
+              <Image
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                data-ai-hint={product.imageHint || "cosmetics"}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                <ImageIcon className="w-8 h-8 text-primary/20" />
+              </div>
+            )}
             <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <div className="bg-white/90 p-2 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 shadow-lg">
                 <Info className="w-5 h-5 text-primary" />
@@ -48,18 +53,32 @@ export function ProductCard({ product }: { product: Product }) {
             <div className="w-full md:w-1/2 bg-muted relative aspect-square">
               <Carousel className="w-full h-full">
                 <CarouselContent className="h-full m-0">
-                  {product.images.map((img, index) => (
-                    <CarouselItem key={index} className="p-0 h-full relative aspect-square">
-                      <Image
-                        src={img}
-                        alt={`${product.name} view ${index + 1}`}
-                        fill
-                        className="object-cover"
-                      />
+                  {product.images && product.images.length > 0 ? (
+                    product.images.map((img, index) => (
+                      <CarouselItem key={index} className="p-0 h-full relative aspect-square">
+                        {img ? (
+                          <Image
+                            src={img}
+                            alt={`${product.name} view ${index + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                            <ImageIcon className="w-12 h-12 text-primary/20" />
+                          </div>
+                        )}
+                      </CarouselItem>
+                    ))
+                  ) : (
+                    <CarouselItem className="p-0 h-full relative aspect-square">
+                      <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                        <ImageIcon className="w-12 h-12 text-primary/20" />
+                      </div>
                     </CarouselItem>
-                  ))}
+                  )}
                 </CarouselContent>
-                {product.images.length > 1 && (
+                {product.images && product.images.length > 1 && (
                   <>
                     <CarouselPrevious className="left-2 bg-white/50 border-none hover:bg-white" />
                     <CarouselNext className="right-2 bg-white/50 border-none hover:bg-white" />

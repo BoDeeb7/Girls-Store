@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useState } from "react";
 import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,8 +59,14 @@ export function CartView() {
           <h3 className="font-black uppercase text-xs tracking-widest text-primary/40 px-1">Your Selection</h3>
           {items.map((item) => (
             <div key={item.id} className="flex gap-4 p-3 border rounded-xl bg-background/30 group">
-              <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border">
-                <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+              <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border bg-muted">
+                {item.imageUrl ? (
+                  <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+                  </div>
+                )}
               </div>
               <div className="flex-1 text-left flex flex-col justify-between">
                 <div>
