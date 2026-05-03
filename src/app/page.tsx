@@ -37,13 +37,21 @@ export default function HomePage() {
 
   // Firestore Data
   const categoriesQuery = useMemoFirebase(() => db ? query(collection(db, "categories"), orderBy("name", "asc")) : null, [db]);
-  const productsQuery = useMemoFirebase(() => db ? query(collection(db, "products"), orderBy("createdAt", "desc")) : null, [db]);
+  // Fetch products - removing strict orderBy temporarily to ensure everything shows up if createdAt is missing
+  const productsQuery = useMemoFirebase(() => db ? query(collection(db, "products")) : null, [db]);
   
   const { data: categoriesData } = useCollection(categoriesQuery);
   const { data: productsData } = useCollection(productsQuery);
 
   const categories = categoriesData || [];
   const products = productsData || [] as Product[];
+
+  // Sort products locally if needed, to avoid missing documents without createdAt
+  const sortedProducts = [...products].sort((a: any, b: any) => {
+    const dateA = a.createdAt?.seconds || 0;
+    const dateB = b.createdAt?.seconds || 0;
+    return dateB - dateA;
+  });
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -65,7 +73,6 @@ export default function HomePage() {
       setShowPasswordDialog(true);
       setLogoClicks(0);
     }
-    // Reset click counter if user waits too long
     setTimeout(() => setLogoClicks(0), 3000);
   };
 
@@ -75,7 +82,6 @@ export default function HomePage() {
       try {
         const cred = await signInAnonymously(auth);
         
-        // Explicitly create the admin role document
         if (db) {
           await setDoc(doc(db, "roles_admin", cred.user.uid), {
             uid: cred.user.uid,
@@ -85,11 +91,9 @@ export default function HomePage() {
           }, { merge: true });
         }
         
-        // Navigate to admin
         router.push("/admin");
       } catch (error: any) {
         console.error("Auth error:", error);
-        alert(`Authentication failed: ${error.message}`);
       } finally {
         setIsAuthenticating(false);
         setAdminPassword("");
@@ -101,7 +105,7 @@ export default function HomePage() {
     }
   };
 
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = sortedProducts.filter((product) => {
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesSearch = searchQuery === "" || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -181,7 +185,7 @@ export default function HomePage() {
         {filteredProducts.length === 0 && (
           <div className="text-center py-20">
             <p className="text-muted-foreground italic">
-              {searchQuery ? `No products found matching "${searchQuery}"` : "No products found in this category."}
+              {searchQuery ? `No products found matching "${searchQuery}"` : "No products found."}
             </p>
           </div>
         )}
@@ -245,7 +249,6 @@ export default function HomePage() {
               disabled={isAuthenticating}
               className="w-full rounded-full font-black uppercase tracking-widest"
             >
-              {isAuthenticating ? <Loader2 className="animate-spin mr-2" /> : "Unlock Dashboard"}
               {isAuthenticating ? "Verifying..." : "Unlock Dashboard"}
             </Button>
           </DialogFooter>

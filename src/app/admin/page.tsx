@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, Plus, Edit2, ArrowLeft, Loader2, Save, X, Upload, Image as ImageIcon, Search, LogOut } from "lucide-react";
+import { Trash2, Plus, Edit2, ArrowLeft, Loader2, Save, X, Upload, Image as ImageIcon, Search, LogOut, Package } from "lucide-react";
 import { Product } from "@/app/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -42,16 +42,11 @@ export default function AdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [productSearch, setProductSearch] = useState("");
 
-  // Robust redirection logic
   useEffect(() => {
-    // Only attempt redirection if loading is completely finished
     if (!isUserLoading && !isAdminRoleLoading) {
       if (!user) {
-        // No user logged in, send to home
         router.push("/");
       } else if (!adminRole) {
-        // User logged in but no admin document found, send to home
-        // We add a tiny delay to ensure Firestore has synced if we just logged in
         const timeout = setTimeout(() => {
           if (!adminRole) router.push("/");
         }, 1500);
@@ -119,6 +114,7 @@ export default function AdminPage() {
     const productData = {
       ...editingProduct,
       price: Number(editingProduct.price),
+      category: editingProduct.category || "uncategorized",
       updatedAt: serverTimestamp(),
       createdAt: editingProduct.id ? editingProduct.createdAt : serverTimestamp(),
       images: editingProduct.images || [],
@@ -153,6 +149,9 @@ export default function AdminPage() {
     p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
     (p.description && p.description.toLowerCase().includes(productSearch.toLowerCase()))
   );
+
+  // Group products by category, including a special group for uncategorized ones
+  const uncategorizedProducts = filteredProducts?.filter(p => !p.category || p.category === "uncategorized");
 
   return (
     <div className="min-h-screen bg-secondary/30 p-4 sm:p-8">
@@ -216,6 +215,7 @@ export default function AdminPage() {
                             <SelectValue placeholder="Select Category" />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="uncategorized">Uncategorized</SelectItem>
                             {categories?.map(cat => (
                               <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                             ))}
@@ -232,7 +232,7 @@ export default function AdminPage() {
                         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
                           {editingProduct.images?.map((img, idx) => (
                             <div key={idx} className="relative aspect-square rounded-xl border-2 border-primary/10 overflow-hidden group shadow-sm">
-                              <img src={img} className="w-full h-full object-cover" />
+                              <img src={img} className="w-full h-full object-cover" alt="preview" />
                               <button 
                                 type="button"
                                 onClick={() => removeImage(idx)}
@@ -276,7 +276,29 @@ export default function AdminPage() {
                     </div>
                   </form>
                 ) : (
-                  <Accordion type="multiple" className="space-y-4" defaultValue={categories?.map(c => c.id)}>
+                  <Accordion type="multiple" className="space-y-4" defaultValue={["uncategorized", ...(categories?.map(c => c.id) || [])]}>
+                    {/* Uncategorized section shown first or if products exist */}
+                    {uncategorizedProducts && uncategorizedProducts.length > 0 && (
+                      <AccordionItem value="uncategorized" className="border rounded-2xl px-4 overflow-hidden bg-white/50 border-primary/5 shadow-sm">
+                        <AccordionTrigger className="hover:no-underline py-5 group">
+                          <div className="flex items-center gap-3">
+                            <Package className="w-4 h-4 text-primary/40" />
+                            <span className="font-black uppercase tracking-widest text-xs text-primary group-hover:tracking-[0.2em] transition-all">Uncategorized</span>
+                            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-black">
+                              {uncategorizedProducts.length}
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-2 pb-6">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {uncategorizedProducts.map(product => (
+                              <ProductListItem key={product.id} product={product} onEdit={() => setEditingProduct(product)} db={db} />
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+
                     {categories?.map(category => {
                       const categoryProducts = filteredProducts?.filter(p => p.category === category.id);
                       if (categoryProducts?.length === 0 && productSearch) return null;
@@ -294,33 +316,11 @@ export default function AdminPage() {
                           <AccordionContent className="pt-2 pb-6">
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                               {categoryProducts?.map(product => (
-                                <div key={product.id} className="p-4 border rounded-xl flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all bg-white/30 border-primary/5">
-                                  <div className="flex items-center gap-3 overflow-hidden">
-                                    <div className="w-12 h-12 bg-muted rounded-lg overflow-hidden flex-shrink-0 border-2 border-primary/5">
-                                      {product.images?.[0] ? (
-                                        <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                                      ) : (
-                                        <ImageIcon className="w-full h-full p-3 text-muted-foreground" />
-                                      )}
-                                    </div>
-                                    <div className="overflow-hidden">
-                                      <p className="font-bold text-sm truncate text-foreground">{product.name}</p>
-                                      <p className="text-xs text-primary font-black">${product.price.toFixed(2)}</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/5" onClick={() => setEditingProduct(product)}>
-                                      <Edit2 className="w-4 h-4 text-primary" />
-                                    </Button>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-destructive/5" onClick={() => deleteDocumentNonBlocking(doc(db, "products", product.id))}>
-                                      <Trash2 className="w-4 h-4 text-destructive" />
-                                    </Button>
-                                  </div>
-                                </div>
+                                <ProductListItem key={product.id} product={product} onEdit={() => setEditingProduct(product)} db={db} />
                               ))}
-                              {categoryProducts?.length === 0 && (
+                              {(!categoryProducts || categoryProducts.length === 0) && (
                                 <div className="col-span-full py-8 text-center bg-primary/5 rounded-xl border border-dashed border-primary/20">
-                                  <p className="text-xs text-primary/40 font-bold uppercase tracking-widest">No items found</p>
+                                  <p className="text-xs text-primary/40 font-bold uppercase tracking-widest">No items in this category</p>
                                 </div>
                               )}
                             </div>
@@ -377,6 +377,34 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
+    </div>
+  );
+}
+
+function ProductListItem({ product, onEdit, db }: { product: any, onEdit: () => void, db: any }) {
+  return (
+    <div className="p-4 border rounded-xl flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all bg-white/30 border-primary/5">
+      <div className="flex items-center gap-3 overflow-hidden">
+        <div className="w-12 h-12 bg-muted rounded-lg overflow-hidden flex-shrink-0 border-2 border-primary/5">
+          {product.images?.[0] ? (
+            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+          ) : (
+            <ImageIcon className="w-full h-full p-3 text-muted-foreground" />
+          )}
+        </div>
+        <div className="overflow-hidden">
+          <p className="font-bold text-sm truncate text-foreground">{product.name}</p>
+          <p className="text-xs text-primary font-black">${product.price.toFixed(2)}</p>
+        </div>
+      </div>
+      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/5" onClick={onEdit}>
+          <Edit2 className="w-4 h-4 text-primary" />
+        </Button>
+        <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-destructive/5" onClick={() => deleteDocumentNonBlocking(doc(db, "products", product.id))}>
+          <Trash2 className="w-4 h-4 text-destructive" />
+        </Button>
       </div>
     </div>
   );
