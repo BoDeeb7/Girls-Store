@@ -37,7 +37,7 @@ export default function AdminPage() {
   const { data: categoriesData } = useCollection(categoriesQuery);
   const { data: productsData } = useCollection(productsQuery);
 
-  // Local sorting
+  // Local sorting and safety checks
   const categories = categoriesData ? [...categoriesData].sort((a, b) => (a.name || "").localeCompare(b.name || "")) : [];
   const products = productsData ? [...productsData].sort((a, b) => {
     const dateA = a.createdAt?.seconds || 0;
@@ -68,11 +68,20 @@ export default function AdminPage() {
     }
   };
 
-  if (isUserLoading || isAdminRoleLoading || !user || !adminRole) {
+  if (isUserLoading || isAdminRoleLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background px-4">
         <Loader2 className="animate-spin text-primary w-12 h-12" />
         <p className="text-primary font-bold uppercase tracking-[0.2em] text-[10px]">Verifying Access...</p>
+      </div>
+    );
+  }
+
+  if (!user || !adminRole) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background px-4">
+        <p className="text-destructive font-bold uppercase tracking-[0.2em] text-xs">Access Denied</p>
+        <Button onClick={() => router.push("/")} variant="outline" className="rounded-full">Return Home</Button>
       </div>
     );
   }
@@ -112,7 +121,6 @@ export default function AdminPage() {
     setIsSubmitting(true);
     try {
       const productData = {
-        ...editingProduct,
         name: editingProduct.name || "",
         description: editingProduct.description || "",
         price: Number(editingProduct.price) || 0,
@@ -168,14 +176,14 @@ export default function AdminPage() {
     }
   };
 
-  const filteredProducts = products?.filter(p => {
+  const filteredProducts = products.filter(p => {
     const name = p.name || "";
     const desc = p.description || "";
     const search = productSearch.toLowerCase();
     return name.toLowerCase().includes(search) || desc.toLowerCase().includes(search);
   });
 
-  const uncategorizedProducts = filteredProducts?.filter(p => !p.category || p.category === "uncategorized");
+  const uncategorizedProducts = filteredProducts.filter(p => !p.category || p.category === "uncategorized");
 
   return (
     <div className="min-h-screen bg-secondary/30 pb-20">
@@ -242,7 +250,7 @@ export default function AdminPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="uncategorized">Uncategorized</SelectItem>
-                            {categories?.map(cat => (
+                            {categories.map(cat => (
                               <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                             ))}
                           </SelectContent>
@@ -250,7 +258,7 @@ export default function AdminPage() {
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary/60">Price ($)</Label>
-                        <Input type="number" step="0.01" value={editingProduct.price || ''} onChange={e => setEditingProduct({...editingProduct, price: e.target.value})} placeholder="0.00" className="rounded-xl h-11" required />
+                        <Input type="number" step="0.01" value={editingProduct.price || ''} onChange={e => setEditingProduct({...editingProduct, price: parseFloat(e.target.value)})} placeholder="0.00" className="rounded-xl h-11" required />
                       </div>
                       
                       <div className="md:col-span-2 space-y-4">
@@ -291,8 +299,8 @@ export default function AdminPage() {
                     </div>
                   </form>
                 ) : (
-                  <Accordion type="multiple" className="space-y-3" defaultValue={["uncategorized", ...(categories?.map(c => c.id) || [])]}>
-                    {uncategorizedProducts && uncategorizedProducts.length > 0 && (
+                  <Accordion type="multiple" className="space-y-3" defaultValue={["uncategorized", ...(categories.map(c => c.id) || [])]}>
+                    {uncategorizedProducts.length > 0 && (
                       <AccordionItem value="uncategorized" className="border rounded-2xl px-3 sm:px-4 bg-white/50 border-primary/5 shadow-sm">
                         <AccordionTrigger className="hover:no-underline py-4">
                           <div className="flex items-center gap-3">
@@ -306,8 +314,12 @@ export default function AdminPage() {
                             {uncategorizedProducts.map(product => (
                               <ProductItem key={product.id} product={product} onEdit={() => setEditingProduct(product)} onDelete={async () => {
                                 if(confirm("Delete this item?")) {
-                                  await deleteDoc(doc(db, "products", product.id));
-                                  toast({ title: "Deleted", description: "Product removed from inventory." });
+                                  try {
+                                    await deleteDoc(doc(db, "products", product.id));
+                                    toast({ title: "Deleted", description: "Product removed from inventory." });
+                                  } catch (err) {
+                                    toast({ title: "Error", description: "Failed to delete.", variant: "destructive" });
+                                  }
                                 }
                               }} />
                             ))}
@@ -317,27 +329,31 @@ export default function AdminPage() {
                     )}
 
                     {categories.map(category => {
-                      const categoryProducts = filteredProducts?.filter(p => p.category === category.id);
-                      if (categoryProducts?.length === 0 && productSearch) return null;
+                      const categoryProducts = filteredProducts.filter(p => p.category === category.id);
+                      if (categoryProducts.length === 0 && productSearch) return null;
                       return (
                         <AccordionItem key={category.id} value={category.id} className="border rounded-2xl px-3 sm:px-4 bg-white/50 border-primary/5 shadow-sm">
                           <AccordionTrigger className="hover:no-underline py-4">
                             <div className="flex items-center gap-3">
                               <span className="font-black uppercase tracking-widest text-[11px] text-primary">{category.name}</span>
-                              <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-black">{categoryProducts?.length || 0}</span>
+                              <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-black">{categoryProducts.length}</span>
                             </div>
                           </AccordionTrigger>
                           <AccordionContent className="pb-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {categoryProducts?.map(product => (
+                              {categoryProducts.map(product => (
                                 <ProductItem key={product.id} product={product} onEdit={() => setEditingProduct(product)} onDelete={async () => {
                                   if(confirm("Delete this item?")) {
-                                    await deleteDoc(doc(db, "products", product.id));
-                                    toast({ title: "Deleted", description: "Product removed from inventory." });
+                                    try {
+                                      await deleteDoc(doc(db, "products", product.id));
+                                      toast({ title: "Deleted", description: "Product removed from inventory." });
+                                    } catch (err) {
+                                      toast({ title: "Error", description: "Failed to delete.", variant: "destructive" });
+                                    }
                                   }
                                 }} />
                               ))}
-                              {(!categoryProducts || categoryProducts.length === 0) && (
+                              {categoryProducts.length === 0 && (
                                 <div className="col-span-full py-6 text-center border-2 border-dashed border-primary/10 rounded-xl">
                                   <p className="text-[10px] text-primary/30 font-black uppercase tracking-widest">No products in this category</p>
                                 </div>
@@ -388,8 +404,12 @@ export default function AdminPage() {
                           </Button>
                           <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-destructive/5" onClick={async () => {
                             if(confirm("Delete category?")) {
-                              await deleteDoc(doc(db, "categories", cat.id));
-                              toast({ title: "Deleted", description: "Category removed." });
+                              try {
+                                await deleteDoc(doc(db, "categories", cat.id));
+                                toast({ title: "Deleted", description: "Category removed." });
+                              } catch (err) {
+                                toast({ title: "Error", description: "Failed to delete.", variant: "destructive" });
+                              }
                             }
                           }}>
                             <Trash2 className="w-3 h-3 text-destructive" />
@@ -410,12 +430,14 @@ export default function AdminPage() {
 
 function ProductItem({ product, onEdit, onDelete }: { product: any, onEdit: () => void, onDelete: () => void }) {
   const price = Number(product.price) || 0;
+  const imageUrl = product.images?.[0] || product.imageUrl;
+
   return (
     <div className="p-3 border rounded-xl flex items-center justify-between group hover:bg-white hover:shadow-md transition-all bg-white/30 border-primary/5">
       <div className="flex items-center gap-3 overflow-hidden">
         <div className="w-10 h-10 bg-muted rounded-lg overflow-hidden flex-shrink-0 border border-primary/5">
-          {product.images?.[0] ? (
-            <img src={product.images[0]} alt={product.name || "Item"} className="w-full h-full object-cover" />
+          {imageUrl ? (
+            <img src={imageUrl} alt={product.name || "Item"} className="w-full h-full object-cover" />
           ) : (
             <ImageIcon className="w-full h-full p-2 text-muted-foreground/30" />
           )}

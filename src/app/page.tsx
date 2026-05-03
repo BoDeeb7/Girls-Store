@@ -22,7 +22,7 @@ import { Product } from "./types";
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isMuted, setIsMuted] = useState(true); // Default muted to comply with browser policies
+  const [isMuted, setIsMuted] = useState(true); 
   const audioRef = useRef<HTMLAudioElement>(null);
   const { itemsCount } = useCart();
   const db = useFirestore();
@@ -45,24 +45,19 @@ export default function HomePage() {
   const categories = categoriesData || [];
   const products = (productsData || []) as Product[];
 
+  // Sorting products safely
   const sortedProducts = [...products].sort((a: any, b: any) => {
     const dateA = a.createdAt?.seconds || 0;
     const dateB = b.createdAt?.seconds || 0;
     return dateB - dateA;
   });
 
-  // Music Autoplay and Management Logic
+  // Music Management Logic
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     audio.volume = 0.3;
-
-    const startAudio = () => {
-      if (!isMuted) {
-        audio.play().catch(() => {});
-      }
-    };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -74,12 +69,11 @@ export default function HomePage() {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     
+    // Auto-unlock audio on first interaction if not muted
     const unlockAudio = () => {
-      if (isMuted) return;
-      audio.play().catch(() => {});
-      document.removeEventListener('click', unlockAudio);
-      document.removeEventListener('touchstart', unlockAudio);
-      document.removeEventListener('scroll', unlockAudio);
+      if (!isMuted && audio.paused) {
+        audio.play().catch(() => {});
+      }
     };
 
     document.addEventListener('click', unlockAudio);
@@ -145,6 +139,7 @@ export default function HomePage() {
   };
 
   const filteredProducts = sortedProducts.filter((product) => {
+    if (!product) return false;
     const name = product.name || "";
     const description = product.description || "";
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
@@ -221,7 +216,7 @@ export default function HomePage() {
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
           {filteredProducts.map((product, idx) => (
             <div 
-              key={product.id} 
+              key={product.id || idx} 
               className="animate-in fade-in slide-in-from-bottom-4 duration-500"
               style={{ animationDelay: `${idx * 100}ms` }}
             >
