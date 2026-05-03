@@ -6,7 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import { ProductCard } from "@/components/ProductCard";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/hooks/use-cart";
-import { ShoppingBag, VolumeX, Volume2, Lock } from "lucide-react";
+import { ShoppingBag, VolumeX, Volume2, Lock, Loader2 } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CartView } from "@/components/CartView";
 import { Footer } from "@/components/Footer";
@@ -75,23 +75,21 @@ export default function HomePage() {
       try {
         const cred = await signInAnonymously(auth);
         
-        // Ensure the admin role exists before redirecting
+        // Explicitly create the admin role document
         if (db) {
           await setDoc(doc(db, "roles_admin", cred.user.uid), {
             uid: cred.user.uid,
             role: "admin",
-            updatedAt: serverTimestamp()
+            updatedAt: serverTimestamp(),
+            lastLogin: serverTimestamp()
           }, { merge: true });
         }
         
-        localStorage.setItem("admin_auth", "true");
-        // Use a small delay to ensure Firebase state propagates
-        setTimeout(() => {
-          router.push("/admin");
-        }, 500);
-      } catch (error) {
+        // Navigate to admin
+        router.push("/admin");
+      } catch (error: any) {
         console.error("Auth error:", error);
-        alert("Authentication failed. Please try again.");
+        alert(`Authentication failed: ${error.message}`);
       } finally {
         setIsAuthenticating(false);
         setAdminPassword("");
@@ -247,6 +245,7 @@ export default function HomePage() {
               disabled={isAuthenticating}
               className="w-full rounded-full font-black uppercase tracking-widest"
             >
+              {isAuthenticating ? <Loader2 className="animate-spin mr-2" /> : "Unlock Dashboard"}
               {isAuthenticating ? "Verifying..." : "Unlock Dashboard"}
             </Button>
           </DialogFooter>
