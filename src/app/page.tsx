@@ -37,7 +37,6 @@ export default function HomePage() {
 
   // Firestore Data
   const categoriesQuery = useMemoFirebase(() => db ? query(collection(db, "categories"), orderBy("name", "asc")) : null, [db]);
-  // Fetch products - removing strict orderBy temporarily to ensure everything shows up if createdAt is missing
   const productsQuery = useMemoFirebase(() => db ? query(collection(db, "products")) : null, [db]);
   
   const { data: categoriesData } = useCollection(categoriesQuery);
@@ -46,24 +45,50 @@ export default function HomePage() {
   const categories = categoriesData || [];
   const products = productsData || [] as Product[];
 
-  // Sort products locally if needed, to avoid missing documents without createdAt
   const sortedProducts = [...products].sort((a: any, b: any) => {
     const dateA = a.createdAt?.seconds || 0;
     const dateB = b.createdAt?.seconds || 0;
     return dateB - dateA;
   });
 
+  // Robust Audio Implementation
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    // Set initial properties
+    audio.volume = 0.3; // Low volume for calm atmosphere
     audio.muted = isMuted;
-    
-    const unlockAudio = () => {
-      if (audio.paused) audio.play().catch(() => {});
-      document.removeEventListener('click', unlockAudio);
+
+    const attemptPlay = () => {
+      audio.play().catch(() => {
+        // Autoplay blocked, wait for next interaction
+      });
     };
-    document.addEventListener('click', unlockAudio);
-    return () => document.removeEventListener('click', unlockAudio);
+
+    // Unlock audio on any user interaction
+    const handleInteraction = () => {
+      attemptPlay();
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('touchstart', handleInteraction);
+    };
+
+    document.addEventListener('click', handleInteraction);
+    document.addEventListener('touchstart', handleInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('touchstart', handleInteraction);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted;
+      if (!isMuted) {
+        audioRef.current.play().catch(() => {});
+      }
+    }
   }, [isMuted]);
 
   const handleLogoClick = () => {
@@ -118,7 +143,15 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background relative selection:bg-primary/20">
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-      <audio ref={audioRef} src="https://cdn.pixabay.com/audio/2022/05/27/audio_180873748b.mp3" loop playsInline preload="auto" />
+      
+      {/* Calm Piano Background Music */}
+      <audio 
+        ref={audioRef} 
+        src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
+        loop 
+        playsInline 
+        preload="auto" 
+      />
 
       <main className="container mx-auto px-4 py-12">
         <section className="text-center mb-16 animate-in fade-in zoom-in duration-1000">
