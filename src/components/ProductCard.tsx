@@ -23,18 +23,19 @@ export function ProductCard({ product }: { product: Product }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Auto-cycle images on hover
+  // تبديل الصور تلقائياً وبشكل مستمر في حال تعدد الصور
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isHovered && product.images && product.images.length > 1) {
-      interval = setInterval(() => {
-        setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
-      }, 1500);
-    } else {
+    if (!product.images || product.images.length <= 1) {
       setCurrentImageIndex(0);
+      return;
     }
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
+    }, 3000); // تبديل كل 3 ثواني
+
     return () => clearInterval(interval);
-  }, [isHovered, product.images]);
+  }, [product.images]);
 
   const displayImage = product.images?.[currentImageIndex] || product.imageUrl;
 
@@ -52,7 +53,7 @@ export function ProductCard({ product }: { product: Product }) {
                 src={displayImage}
                 alt={product.name}
                 fill
-                className="object-cover transition-opacity duration-500"
+                className="object-cover transition-opacity duration-1000"
                 data-ai-hint={product.imageHint || "cosmetics"}
               />
             ) : (
@@ -65,6 +66,18 @@ export function ProductCard({ product }: { product: Product }) {
                 <Info className="w-5 h-5 text-primary" />
               </div>
             </div>
+            
+            {/* مؤشر النقاط الصغير للصور المتعددة */}
+            {product.images && product.images.length > 1 && (
+              <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 z-10">
+                {product.images.map((_, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`w-1 h-1 rounded-full transition-all duration-500 ${idx === currentImageIndex ? 'bg-primary w-3' : 'bg-white/50'}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none rounded-2xl">
