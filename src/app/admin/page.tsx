@@ -18,6 +18,37 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 
+// Helper to resize and compress images before upload
+const compressImage = (base64Str: string, maxWidth = 800, maxHeight = 800): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('canvas-2d' as any) || (canvas as any).getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compress to 70% quality JPEG
+    };
+  });
+};
+
 export default function AdminPage() {
   const router = useRouter();
   const db = useFirestore();
@@ -49,6 +80,7 @@ export default function AdminPage() {
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingCategory, setEditingCategory] = useState<{ id?: string, name: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [productSearch, setProductSearch] = useState("");
 
   useEffect(() => {
@@ -86,25 +118,38 @@ export default function AdminPage() {
     );
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
+    setIsUploading(true);
     const fileArray = Array.from(files);
-    const readers = fileArray.map(file => {
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-    });
+    
+    try {
+      const compressedImages = await Promise.all(
+        fileArray.map(async (file) => {
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+              const base64 = reader.result as string;
+              const compressed = await compressImage(base64);
+              resolve(compressed);
+            };
+            reader.readAsDataURL(file);
+          });
+        })
+      );
 
-    Promise.all(readers).then(base64Strings => {
       setEditingProduct(prev => ({
         ...prev,
-        images: [...(prev?.images || []), ...base64Strings]
+        images: [...(prev?.images || []), ...compressedImages]
       }));
-    });
+    } catch (err) {
+      toast({ title: "Upload Error", description: "Could not process images.", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const removeImage = (index: number) => {
@@ -116,19 +161,28 @@ export default function AdminPage() {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingProduct?.name || !editingProduct?.price) return;
+    if (!editingProduct?.name) {
+      toast({ title: "Missing Name", description: "Please enter a product name.", variant: "destructive" });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
+      const priceVal = Number(editingProduct.price) || 0;
       const productData = {
         name: editingProduct.name || "",
         description: editingProduct.description || "",
-        price: Number(editingProduct.price) || 0,
+        price: priceVal,
         category: editingProduct.category || "uncategorized",
         updatedAt: serverTimestamp(),
         createdAt: editingProduct.createdAt || serverTimestamp(),
         images: editingProduct.images || [],
         imageUrl: editingProduct.images?.[0] || "",
+        // Include default fields to avoid validation errors
+        nameAr: editingProduct.nameAr || "",
+        descriptionAr: editingProduct.descriptionAr || "",
+        categoryAr: editingProduct.categoryAr || "",
+        imageHint: editingProduct.imageHint || "cosmetics",
       };
 
       if (editingProduct.id) {
@@ -143,10 +197,10 @@ export default function AdminPage() {
       setEditingProduct(null);
     } catch (err: any) {
       console.error("Save error:", err);
-      const isSizeError = err.message?.toLowerCase().includes("large") || err.code === "resource-exhausted";
+      const isSizeError = err.message?.toLowerCase().includes("large") || err.code === "resource-exhausted" || err.message?.toLowerCase().includes("maximum");
       toast({ 
         title: "Error Saving", 
-        description: isSizeError ? "Total image size is too large. Try uploading fewer or smaller photos." : "Could not save. Please check your connection.", 
+        description: isSizeError ? "Total image size is still too large. Try uploading fewer photos." : `Could not save: ${err.message || 'Unknown error'}`, 
         variant: "destructive" 
       });
     } finally {
@@ -262,7 +316,9 @@ export default function AdminPage() {
                       </div>
                       
                       <div className="md:col-span-2 space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary/60">Image Gallery</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary/60">
+                          Image Gallery {isUploading && <span className="text-primary animate-pulse ml-2">(Processing...)</span>}
+                        </Label>
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                           {editingProduct.images?.map((img, idx) => (
                             <div key={idx} className="relative aspect-square rounded-xl border border-primary/10 overflow-hidden group shadow-sm">
@@ -274,14 +330,16 @@ export default function AdminPage() {
                           ))}
                           <button
                             type="button"
+                            disabled={isUploading}
                             onClick={() => fileInputRef.current?.click()}
-                            className="aspect-square rounded-xl border-2 border-dashed border-primary/20 flex flex-col items-center justify-center gap-1 text-primary/40 hover:bg-primary/5 transition-all"
+                            className="aspect-square rounded-xl border-2 border-dashed border-primary/20 flex flex-col items-center justify-center gap-1 text-primary/40 hover:bg-primary/5 transition-all disabled:opacity-50"
                           >
-                            <Upload className="w-5 h-5" />
-                            <span className="text-[8px] font-black uppercase tracking-widest">Upload</span>
+                            {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                            <span className="text-[8px] font-black uppercase tracking-widest">{isUploading ? 'Resizing' : 'Upload'}</span>
                           </button>
                           <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/*" className="hidden" />
                         </div>
+                        <p className="text-[9px] text-muted-foreground italic">Tip: Images are automatically resized for fast loading.</p>
                       </div>
 
                       <div className="md:col-span-2 space-y-2">
@@ -290,7 +348,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                      <Button type="submit" disabled={isSubmitting} className="w-full sm:flex-1 rounded-full h-12 font-black uppercase tracking-widest shadow-lg">
+                      <Button type="submit" disabled={isSubmitting || isUploading} className="w-full sm:flex-1 rounded-full h-12 font-black uppercase tracking-widest shadow-lg">
                         {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-4 h-4" />} {editingProduct.id ? 'Update Item' : 'Save Item'}
                       </Button>
                       <Button type="button" variant="outline" onClick={() => setEditingProduct(null)} className="w-full sm:flex-1 rounded-full h-12 font-black uppercase tracking-widest">
