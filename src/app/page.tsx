@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -38,16 +39,16 @@ export default function HomePage() {
   const categoriesQuery = useMemoFirebase(() => db ? query(collection(db, "categories"), orderBy("name", "asc")) : null, [db]);
   const productsQuery = useMemoFirebase(() => db ? query(collection(db, "products")) : null, [db]);
   
-  const { data: categoriesData } = useCollection(categoriesQuery);
-  const { data: productsData } = useCollection(productsQuery);
+  const { data: categoriesData, isLoading: isCategoriesLoading } = useCollection(categoriesQuery);
+  const { data: productsData, isLoading: isProductsLoading } = useCollection(productsQuery);
 
   const categories = categoriesData || [];
   const products = (productsData || []) as Product[];
 
   // Sorting products safely to ensure new items appear at the top immediately
   const sortedProducts = [...products].sort((a: any, b: any) => {
-    const dateA = a.createdAt?.seconds || (a.createdAt?.toMillis ? a.createdAt.toMillis() / 1000 : Date.now() / 1000);
-    const dateB = b.createdAt?.seconds || (b.createdAt?.toMillis ? b.createdAt.toMillis() / 1000 : Date.now() / 1000);
+    const dateA = a.createdAt?.seconds || (a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now() / 1000);
+    const dateB = b.createdAt?.seconds || (b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now() / 1000);
     return dateB - dateA;
   });
 
@@ -212,24 +213,33 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
-          {filteredProducts.map((product, idx) => (
-            <div 
-              key={product.id || idx} 
-              className="animate-in fade-in slide-in-from-bottom-4 duration-500"
-              style={{ animationDelay: `${idx * 100}ms` }}
-            >
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </section>
-
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground italic">
-              {searchQuery ? `No products found matching "${searchQuery}"` : "No products found."}
-            </p>
+        {isProductsLoading && products.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-primary/20" />
+            <p className="text-[10px] font-black text-primary/20 uppercase tracking-[0.3em]">Syncing Collection...</p>
           </div>
+        ) : (
+          <>
+            <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
+              {filteredProducts.map((product, idx) => (
+                <div 
+                  key={product.id || idx} 
+                  className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+                  style={{ animationDelay: `${idx * 100}ms` }}
+                >
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </section>
+
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground italic">
+                  {searchQuery ? `No products found matching "${searchQuery}"` : "Our collection is being updated."}
+                </p>
+              </div>
+            )}
+          </>
         )}
       </main>
 
