@@ -48,15 +48,14 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  // نضبط القيمة الابتدائية لتكون true إذا كان هناك استعلام موجود فعلياً لمنع الوميض الخاطئ
-  const [isLoading, setIsLoading] = useState<boolean>(!!memoizedTargetRefOrQuery);
+  // نضبط القيمة الابتدائية لتكون true دائماً في البداية لمنع ظهور "لا توجد بيانات" قبل الاتصال
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
+    // إذا لم يكن هناك استعلام بعد (مثلاً بانتظار تهيئة db)، نبقى في حالة تحميل ولا نظهر بيانات فارغة
     if (!memoizedTargetRefOrQuery) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
+      setIsLoading(true);
       return;
     }
 

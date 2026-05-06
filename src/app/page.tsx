@@ -139,6 +139,9 @@ export default function HomePage() {
 
   const toggleMute = () => setIsMuted(!isMuted);
 
+  // نعتبر أننا في حالة تحميل طالما أن الـ Hook يقول ذلك أو أن البيانات لا تزال null
+  const showLoading = isProductsLoading || productsData === null;
+
   return (
     <div className="min-h-screen bg-background relative selection:bg-primary/20">
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
@@ -201,28 +204,26 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* المنطق الجديد: لا تظهر "لا توجد بيانات" أبداً أثناء التحميل */}
-        {isProductsLoading && products.length === 0 ? (
+        {showLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary/20" />
             <p className="text-[10px] font-black text-primary/20 uppercase tracking-[0.3em]">Connecting to Store...</p>
           </div>
         ) : (
           <>
-            <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
-              {filteredProducts.map((product, idx) => (
-                <div 
-                  key={product.id || idx} 
-                  className="animate-in fade-in slide-in-from-bottom-4 duration-500"
-                  style={{ animationDelay: `${idx * 100}ms` }}
-                >
-                  <ProductCard product={product} />
-                </div>
-              ))}
-            </section>
-
-            {/* لا تظهر هذه الرسالة إلا إذا اكتمل التحميل وكان العدد فعلياً صفر */}
-            {!isProductsLoading && filteredProducts.length === 0 && (
+            {filteredProducts.length > 0 ? (
+              <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
+                {filteredProducts.map((product, idx) => (
+                  <div 
+                    key={product.id || idx} 
+                    className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                  >
+                    <ProductCard product={product} />
+                  </div>
+                ))}
+              </section>
+            ) : (
               <div className="text-center py-20">
                 <p className="text-muted-foreground italic">
                   {searchQuery ? `No products found matching "${searchQuery}"` : "Our collection is being updated."}
