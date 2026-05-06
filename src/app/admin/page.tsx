@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -70,9 +69,9 @@ export default function AdminPage() {
 
   // Local sorting and safety checks
   const categories = categoriesData ? [...categoriesData].sort((a, b) => (a.name || "").localeCompare(b.name || "")) : [];
-  const products = productsData ? [...productsData].sort((a, b) => {
-    const dateA = a.createdAt?.seconds || 0;
-    const dateB = b.createdAt?.seconds || 0;
+  const products = productsData ? [...productsData].sort((a: any, b: any) => {
+    const dateA = a.createdAt?.seconds || (a.createdAt?.toMillis ? a.createdAt.toMillis() / 1000 : Date.now() / 1000);
+    const dateB = b.createdAt?.seconds || (b.createdAt?.toMillis ? b.createdAt.toMillis() / 1000 : Date.now() / 1000);
     return dateB - dateA;
   }) : [];
 
@@ -169,7 +168,10 @@ export default function AdminPage() {
     setIsSubmitting(true);
     try {
       const priceVal = Number(editingProduct.price) || 0;
+      
+      // Use existing fields to avoid overwriting metadata we don't know about
       const productData = {
+        ...editingProduct,
         name: editingProduct.name || "",
         description: editingProduct.description || "",
         price: priceVal,
@@ -178,12 +180,15 @@ export default function AdminPage() {
         createdAt: editingProduct.createdAt || serverTimestamp(),
         images: editingProduct.images || [],
         imageUrl: editingProduct.images?.[0] || "",
-        // Include default fields to avoid validation errors
+        // Safety defaults for required fields
         nameAr: editingProduct.nameAr || "",
         descriptionAr: editingProduct.descriptionAr || "",
         categoryAr: editingProduct.categoryAr || "",
         imageHint: editingProduct.imageHint || "cosmetics",
       };
+
+      // Ensure id is not part of the data being written
+      delete (productData as any).id;
 
       if (editingProduct.id) {
         await updateDoc(doc(db, "products", editingProduct.id), productData);

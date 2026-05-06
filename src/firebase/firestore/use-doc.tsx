@@ -63,7 +63,8 @@ export function useDoc<T = any>(
       memoizedDocRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
-          setData({ ...(snapshot.data() as T), id: snapshot.id });
+          // Use serverTimestamps: 'estimate' to ensure real-time updates show immediately
+          setData({ ...(snapshot.data({ serverTimestamps: 'estimate' }) as T), id: snapshot.id });
         } else {
           // Document does not exist
           setData(null);

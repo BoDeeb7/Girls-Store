@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -45,10 +44,10 @@ export default function HomePage() {
   const categories = categoriesData || [];
   const products = (productsData || []) as Product[];
 
-  // Sorting products safely
+  // Sorting products safely to ensure new items appear at the top immediately
   const sortedProducts = [...products].sort((a: any, b: any) => {
-    const dateA = a.createdAt?.seconds || 0;
-    const dateB = b.createdAt?.seconds || 0;
+    const dateA = a.createdAt?.seconds || (a.createdAt?.toMillis ? a.createdAt.toMillis() / 1000 : Date.now() / 1000);
+    const dateB = b.createdAt?.seconds || (b.createdAt?.toMillis ? b.createdAt.toMillis() / 1000 : Date.now() / 1000);
     return dateB - dateA;
   });
 
