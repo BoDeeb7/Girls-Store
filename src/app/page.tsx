@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -29,36 +28,32 @@ export default function HomePage() {
   const auth = useAuth();
   const router = useRouter();
 
-  // Admin trigger state
   const [logoClicks, setLogoClicks] = useState(0);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // Firestore Data
+  // استعلام الفايرستور
   const categoriesQuery = useMemoFirebase(() => db ? query(collection(db, "categories"), orderBy("name", "asc")) : null, [db]);
   const productsQuery = useMemoFirebase(() => db ? query(collection(db, "products")) : null, [db]);
   
-  const { data: categoriesData, isLoading: isCategoriesLoading } = useCollection(categoriesQuery);
+  const { data: categoriesData } = useCollection(categoriesQuery);
   const { data: productsData, isLoading: isProductsLoading } = useCollection(productsQuery);
 
   const categories = categoriesData || [];
   const products = (productsData || []) as Product[];
 
-  // Sorting products safely to ensure new items appear at the top immediately
+  // ترتيب المنتجات برمجياً لضمان السرعة وظهور الجديد أولاً
   const sortedProducts = [...products].sort((a: any, b: any) => {
-    const dateA = a.createdAt?.seconds || (a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now() / 1000);
-    const dateB = b.createdAt?.seconds || (b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now() / 1000);
+    const dateA = a.createdAt?.seconds || (a.createdAt?.toMillis ? a.createdAt.toMillis() / 1000 : Date.now() / 1000);
+    const dateB = b.createdAt?.seconds || (b.createdAt?.toMillis ? b.createdAt.toMillis() / 1000 : Date.now() / 1000);
     return dateB - dateA;
   });
 
-  // Music Management Logic
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-
     audio.volume = 0.3;
-
     const handleVisibilityChange = () => {
       if (document.hidden) {
         audio.pause();
@@ -66,20 +61,15 @@ export default function HomePage() {
         audio.play().catch(() => {});
       }
     };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    
-    // Auto-unlock audio on first interaction if not muted
     const unlockAudio = () => {
       if (!isMuted && audio.paused) {
         audio.play().catch(() => {});
       }
     };
-
     document.addEventListener('click', unlockAudio);
     document.addEventListener('touchstart', unlockAudio);
     document.addEventListener('scroll', unlockAudio);
-
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener('click', unlockAudio);
@@ -114,7 +104,6 @@ export default function HomePage() {
       setIsAuthenticating(true);
       try {
         const cred = await signInAnonymously(auth);
-        
         if (db) {
           await setDoc(doc(db, "roles_admin", cred.user.uid), {
             uid: cred.user.uid,
@@ -123,7 +112,6 @@ export default function HomePage() {
             lastLogin: serverTimestamp()
           }, { merge: true });
         }
-        
         router.push("/admin");
       } catch (error: any) {
         console.error("Auth error:", error);
@@ -213,10 +201,11 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* المنطق الجديد: لا تظهر "لا توجد بيانات" أبداً أثناء التحميل */}
         {isProductsLoading && products.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary/20" />
-            <p className="text-[10px] font-black text-primary/20 uppercase tracking-[0.3em]">Syncing Collection...</p>
+            <p className="text-[10px] font-black text-primary/20 uppercase tracking-[0.3em]">Connecting to Store...</p>
           </div>
         ) : (
           <>
@@ -232,7 +221,8 @@ export default function HomePage() {
               ))}
             </section>
 
-            {filteredProducts.length === 0 && (
+            {/* لا تظهر هذه الرسالة إلا إذا اكتمل التحميل وكان العدد فعلياً صفر */}
+            {!isProductsLoading && filteredProducts.length === 0 && (
               <div className="text-center py-20">
                 <p className="text-muted-foreground italic">
                   {searchQuery ? `No products found matching "${searchQuery}"` : "Our collection is being updated."}
